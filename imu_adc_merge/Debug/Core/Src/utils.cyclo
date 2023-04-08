@@ -1,0 +1,6 @@
+utils.c:3:7:max	2
+utils.c:10:7:clamp	3
+utils.c:20:7:lerp	1
+utils.c:25:7:map	3
+utils.c:35:7:convert_period_to_freq	1
+utils.c:39:7:convert_freq_to_period	1

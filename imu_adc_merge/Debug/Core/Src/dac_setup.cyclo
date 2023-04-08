@@ -1,0 +1,7 @@
+dac_setup.c:7:19:MCP4728_Write_VRef_Select	1
+dac_setup.c:14:19:MCP4728_Write_PWRDWN_Select	1
+dac_setup.c:23:6:MCP4728_Write_GeneralCall	1
+dac_setup.c:30:6:MCP4728_Write_AllChannels_Same	2
+dac_setup.c:42:6:MCP4728_Write_AllChannels_Diff	2
+dac_setup.c:54:6:MCP4728_Write_SingleChannel	1
+dac_setup.c:65:6:MCP4728_Init	2

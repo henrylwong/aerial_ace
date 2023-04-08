@@ -1,0 +1,4 @@
+calculate_gestures.c:39:5:analog_read	1
+calculate_gestures.c:47:6:calculate_gestures	6
+calculate_gestures.c:78:5:detect_gestures	3
+calculate_gestures.c:92:7:calculate_finger_angle	1

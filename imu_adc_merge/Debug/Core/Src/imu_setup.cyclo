@@ -1,0 +1,7 @@
+imu_setup.c:106:13:IMU_Read	4
+imu_setup.c:139:12:IMU_Setup	3
+imu_setup.c:191:16:platform_write_imu	1
+imu_setup.c:199:16:platform_write_mag	1
+imu_setup.c:207:16:platform_read_imu	1
+imu_setup.c:214:16:platform_read_mag	1
+imu_setup.c:222:13:platform_delay	1
