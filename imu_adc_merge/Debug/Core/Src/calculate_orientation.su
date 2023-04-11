@@ -1,7 +1,7 @@
 ../Core/Src/calculate_orientation.c:34:6:calculate_orientation	24	static
 ../Core/Src/calculate_orientation.c:50:6:remap_angles_to_gimbals	8	static
 ../Core/Src/calculate_orientation.c:60:6:reset_aux_frame	4	static
-../Core/Src/calculate_orientation.c:70:6:convert_quaternion_to_euler	16	static
-../Core/Src/calculate_orientation.c:81:6:MadgwickAHRSupdate	192	static
-../Core/Src/calculate_orientation.c:180:6:MadgwickAHRSupdateIMU	128	static
-../Core/Src/calculate_orientation.c:252:7:invSqrt	32	static
+../Core/Src/calculate_orientation.c:70:6:convert_quaternion_to_euler	56	static
+../Core/Src/calculate_orientation.c:104:6:MadgwickAHRSupdate	192	static
+../Core/Src/calculate_orientation.c:203:6:MadgwickAHRSupdateIMU	128	static
+../Core/Src/calculate_orientation.c:275:7:invSqrt	32	static

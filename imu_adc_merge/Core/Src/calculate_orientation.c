@@ -7,8 +7,8 @@
 //---------------------------------------------------------------------------------------------------
 // Variable definitions
 
-volatile float beta = betaDef;								// 2 * proportional gain (Kp)
-extern volatile float q0, q1, q2, q3;
+volatile float beta = betaDef; // 2 * proportional gain (Kp)
+extern volatile float q0, q1, q2, q3; // w, x, y , z
 extern float angle_x, angle_y, angle_z;
 extern float gimbal_roll;
 extern float gimbal_pitch;
@@ -55,7 +55,7 @@ void remap_angles_to_gimbals() {
 }
 
 /*
- * Remapping only consists of pitch and roll
+ * Reset aux frame (identity)
  */
 void reset_aux_frame() {
 	q0 = 1.0f;
@@ -65,13 +65,23 @@ void reset_aux_frame() {
 }
 
 /*
- * Remapping only consists of pitch and roll
+ * Convert quaternion to euler angles
  */
 void convert_quaternion_to_euler() {
 	// angle_x is roll; angle_y is pitch; angle_z is yaw
-    angle_x = atan2(2 * (q0 * q1 + q2 * q3), 1 - 2 * (q1 * q1 + q2 * q2));
-    angle_y = asin(clamp(2 * (q0 * q1 - q3 * q2), -1, 1));
-    angle_z = atan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q2 * q2 + q3 * q3));
+	double q2sqr = q2 * q2;
+	// double t0 = -2.0 * (q2sqr + q3 * q3) + 1.0;
+	// double t1 = +2.0 * (q1 * q2 + q0 * q3);
+	double t2 = -2.0 * (q1 * q3 - q0 * q2);
+	double t3 = +2.0 * (q2 * q3 + q0 * q1);
+	double t4 = -2.0 * (q1 * q1 + q2sqr) + 1.0;
+
+	t2 = t2 > 1.0 ? 1.0 : t2;
+	t2 = t2 < -1.0 ? -1.0 : t2;
+
+	angle_y = asin(t2);
+	angle_x = atan2(t3, t4);
+	// angle_z = atan2(t1, t0);
 }
 
 

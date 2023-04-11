@@ -112,18 +112,18 @@ static void IMU_Read(void) {
 		memset(data_raw_angular_rate, 0x00, 3 * sizeof(int16_t));
 		lsm9ds1_acceleration_raw_get(&dev_ctx_imu, data_raw_acceleration);
 		lsm9ds1_angular_rate_raw_get(&dev_ctx_imu, data_raw_angular_rate);
-//		 accel.acceleration.x = (lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[0]) * 9.807) / 1000;
-//		 accel.acceleration.y = (lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[1]) * 9.807) / 1000;
-//		 accel.acceleration.z = (lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[2]) * 9.807) / 1000;
-//		 gyro.gyro.x = (lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[0]) * 2 * M_PI)/360000;
-//		 gyro.gyro.y = (lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[1]) * 2 * M_PI)/360000;
-//		 gyro.gyro.z = (lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[2]) * 2 * M_PI)/360000;
-		accel.acceleration.x = lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[0]);
-		accel.acceleration.y = lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[1]);
-		accel.acceleration.z = lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[2]);
-		gyro.gyro.x = lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[0]);
-		gyro.gyro.y = lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[1]);
-		gyro.gyro.z = lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[2]);
+		 accel.acceleration.x = (lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[0]) * 9.807) / 1000;
+		 accel.acceleration.y = (lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[1]) * 9.807) / 1000;
+		 accel.acceleration.z = (lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[2]) * 9.807) / 1000;
+		 gyro.gyro.x = (lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[0]) * 2 * M_PI)/360000;
+		 gyro.gyro.y = (lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[1]) * 2 * M_PI)/360000;
+		 gyro.gyro.z = (lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[2]) * 2 * M_PI)/360000;
+//		accel.acceleration.x = lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[0]);
+//		accel.acceleration.y = lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[1]);
+//		accel.acceleration.z = lsm9ds1_from_fs4g_to_mg(data_raw_acceleration[2]);
+//		gyro.gyro.x = lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[0]);
+//		gyro.gyro.y = lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[1]);
+//		gyro.gyro.z = lsm9ds1_from_fs2000dps_to_mdps(data_raw_angular_rate[2]);
 	}
 
 	if (reg.status_mag.zyxda) {

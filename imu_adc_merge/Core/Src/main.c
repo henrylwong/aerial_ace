@@ -136,23 +136,23 @@ int main(void)
   MX_ADC3_Init();
   MX_ADC4_Init();
   MX_I2C1_Init();
-  MX_I2C2_Init();
+//  MX_I2C2_Init();
 
   /* USER CODE BEGIN 2 */
   if (IMU_Setup() != SETUP_SUCCESS) {
     return 1;
   }
-  MCP4728_Init(&hi2c2, output);
-  output.channelVref = 0x00;
-  output.channel_Gain = 0x00;
+//  MCP4728_Init(&hi2c2, output);
+//  output.channelVref = 0x00;
+//  output.channel_Gain = 0x00;
 
   reset_aux_frame();
+//  mag.magnetic.x = 0; mag.magnetic.y = 0; mag.magnetic.z = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-//  while (1)
-  for (i = 0; i < 0xFFF; i++) {
+  while (1) {
 	/* SENSOR READ BEGIN */
 	ADC_Read();
 	IMU_Read();
@@ -167,11 +167,11 @@ int main(void)
 	/* CALCULATIONS END*/
 
 	/* OUTPUT BEGIN */
-	output.channel_Val[0] = i;
-	output.channel_Val[1] = 0x800;
-	output.channel_Val[2] = 0xBBD;
-	output.channel_Val[3] = 0x00;
-	MCP4728_Write_AllChannels_Diff(&hi2c2, output);
+//	output.channel_Val[0] = i;
+//	output.channel_Val[1] = 0x800;
+//	output.channel_Val[2] = 0xBBD;
+//	output.channel_Val[3] = 0x00;
+//	MCP4728_Write_AllChannels_Diff(&hi2c2, output);
 
 	/* OUTPUT END */
   }
