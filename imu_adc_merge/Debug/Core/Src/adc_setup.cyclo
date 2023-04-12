@@ -1,3 +1,4 @@
-adc_setup.c:47:13:ADC_Read	1
-adc_setup.c:54:13:ADC_Calibrate	6
-adc_setup.c:65:12:ADC_GetVal	5
+adc_setup.c:49:13:ADC_ADVREGEN	1
+adc_setup.c:54:13:ADC_Read	1
+adc_setup.c:65:13:ADC_Calibrate	6
+adc_setup.c:76:12:ADC_GetVal	5

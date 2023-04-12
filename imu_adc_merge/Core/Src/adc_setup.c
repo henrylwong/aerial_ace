@@ -25,14 +25,16 @@
 
 /* USER CODE BEGIN PV */
 
-extern int ADC1_val;
-extern int ADC2_val;
-extern int ADC3_val;
-extern int ADC4_val;
+extern int ADC_vals[4];
+//extern int ADC1_val;
+//extern int ADC2_val;
+//extern int ADC3_val;
+//extern int ADC4_val;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
+static void ADC_ADVREGEN(ADC_TypeDef* adc);
 static void ADC_Calibrate(ADC_TypeDef*);
 static int ADC_GetVal(ADC_TypeDef*);
 static void ADC_Read(void);
@@ -44,11 +46,20 @@ static void ADC_Read(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+static void ADC_ADVREGEN(ADC_TypeDef* adc) {
+	adc->CR &= ~ADC_CR_ADVREGEN;
+	adc->CR |= 0x1UL << ADC_CR_ADVREGEN_Pos;
+}
+
 static void ADC_Read(void) {
-  	ADC1_val = ADC_GetVal(ADC1);
-	  ADC2_val = ADC_GetVal(ADC2);
-	  ADC3_val = ADC_GetVal(ADC3);
-	  ADC4_val = ADC_GetVal(ADC4);
+//	ADC1_val = ADC_GetVal(ADC1);
+//	ADC2_val = ADC_GetVal(ADC2);
+//	ADC3_val = ADC_GetVal(ADC3);
+//	ADC4_val = ADC_GetVal(ADC4);
+	ADC_vals[0] = ADC_GetVal(ADC1);
+	ADC_vals[1] = ADC_GetVal(ADC2);
+	ADC_vals[2] = ADC_GetVal(ADC3);
+	ADC_vals[3] = ADC_GetVal(ADC4);
 }
 
 static void ADC_Calibrate(ADC_TypeDef* adc) {

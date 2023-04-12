@@ -25,7 +25,7 @@
 #include "imu_setup.c"
 #include "dac_setup.h"
 #include "calculate_orientation.h"
-// #include "calculate_gestures.h"
+#include "calculate_gestures.h"
 #include "utils.h"
 
 /* USER CODE END Includes */
@@ -67,10 +67,11 @@ sensors_event_t gyro;
 sensors_event_t accel;
 sensors_event_t mag;
 
-int ADC1_val;
-int ADC2_val;
-int ADC3_val;
-int ADC4_val;
+int ADC_vals[4];
+//int ADC1_val;
+//int ADC2_val;
+//int ADC3_val;
+//int ADC4_val;
 
 stmdev_ctx_t dev_ctx_imu;
 stmdev_ctx_t dev_ctx_mag;
@@ -78,9 +79,6 @@ stmdev_ctx_t dev_ctx_mag;
 extern dacChannelConfig config;
 extern dacChannelConfig output;
 extern dacChannelConfig channels;
-
-int i;
-
 
 /* USER CODE END PV */
 
@@ -136,18 +134,17 @@ int main(void)
   MX_ADC3_Init();
   MX_ADC4_Init();
   MX_I2C1_Init();
-//  MX_I2C2_Init();
+  MX_I2C2_Init();
 
   /* USER CODE BEGIN 2 */
   if (IMU_Setup() != SETUP_SUCCESS) {
     return 1;
   }
-//  MCP4728_Init(&hi2c2, output);
-//  output.channelVref = 0x00;
-//  output.channel_Gain = 0x00;
+  MCP4728_Init(&hi2c2, output);
+  output.channelVref = 0x00;
+  output.channel_Gain = 0x00;
 
   reset_aux_frame();
-//  mag.magnetic.x = 0; mag.magnetic.y = 0; mag.magnetic.z = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -160,18 +157,20 @@ int main(void)
 	/* SENSOR READ END */
 
 	/* CALCULATIONS BEGIN */
-	calculate_orientation(0.002); // @henry: change freq
-
-	// calculate_gestures();
+	calculate_orientation(0.01); // @henry: change freq
+	calculate_gestures();
 
 	/* CALCULATIONS END*/
 
 	/* OUTPUT BEGIN */
-//	output.channel_Val[0] = i;
-//	output.channel_Val[1] = 0x800;
-//	output.channel_Val[2] = 0xBBD;
-//	output.channel_Val[3] = 0x00;
-//	MCP4728_Write_AllChannels_Diff(&hi2c2, output);
+	int throttle_voltage = 0;
+	int resting_voltage = 2000;
+	int factor = 2000;
+	output.channel_Val[0] = resting_voltage + (gimbal_pitch - 0.5) * factor; // pitch
+	output.channel_Val[1] = resting_voltage + (gimbal_roll - 0.5) * factor; // roll
+	output.channel_Val[2] = throttle_voltage + (gimbal_throttle * 2) * factor; // throttle
+	output.channel_Val[3] = resting_voltage + (gimbal_yaw - 0.5) * factor; // yaw
+	MCP4728_Write_AllChannels_Diff(&hi2c2, output);
 
 	/* OUTPUT END */
   }
@@ -289,6 +288,8 @@ static void MX_ADC1_Init(void)
   }
   /* USER CODE BEGIN ADC1_Init 2 */
   ADC_Calibrate(ADC1);
+  ADC_ADVREGEN(ADC1); // @henry
+  ADC12_COMMON->CCR|= ADC_CCR_VREFEN; // @henry
 
   ADC1->CR |= ADC_CR_ADEN; // Enable ADC
 //  while ((ADC1->ISR & ADC_ISR_ADRDY) == 0); // Wait for ADC to be ready
