@@ -54,9 +54,11 @@ ADC_HandleTypeDef hadc4;
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 
+TIM_HandleTypeDef htim16;
+
 /* USER CODE BEGIN PV */
 
-volatile float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;	// quaternion of sensor frame relative to auxiliary frame
+volatile float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;  // quaternion of sensor frame relative to auxiliary frame
 volatile float angle_x = 0.0f, angle_y = 0.0f, angle_z = 0.0f;
 volatile float gimbal_roll = 0.0f;
 volatile float gimbal_pitch = 0.0f;
@@ -68,10 +70,6 @@ sensors_event_t accel;
 sensors_event_t mag;
 
 int ADC_vals[4];
-//int ADC1_val;
-//int ADC2_val;
-//int ADC3_val;
-//int ADC4_val;
 
 stmdev_ctx_t dev_ctx_imu;
 stmdev_ctx_t dev_ctx_mag;
@@ -79,6 +77,15 @@ stmdev_ctx_t dev_ctx_mag;
 extern dacChannelConfig config;
 extern dacChannelConfig output;
 extern dacChannelConfig channels;
+
+int t1 = 0, t2 = 0;
+float delay;
+
+int throttle_voltage = 0, resting_voltage = 2000, factor = 2000;
+
+#define MODE_STANDARD 0
+#define MODE_ADVANCED 1
+int mode = MODE_ADVANCED;
 
 /* USER CODE END PV */
 
@@ -91,6 +98,7 @@ static void MX_ADC3_Init(void);
 static void MX_ADC4_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_TIM16_Init(void);
 
 /* USER CODE BEGIN PFP */
 
@@ -100,6 +108,42 @@ static void MX_I2C2_Init(void);
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if(GPIO_Pin == GPIO_PIN_0) // If The INT Source Is EXTI Line9 (A9 Pin)
+    {
+//      HAL_NVIC_DisableIRQ(IRQn_Type IRQn);
+    	if ();
+    }
+}
+
+// Callback: timer has rolled over
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  // Check which version of the timer triggered this callback and toggle LED
+  if (htim == &htim16)
+  {
+	  if (state == CAL_UNFLEXED) {
+		  if (cnt_sec <= 0) {
+			  state = CAL_FLEXED;
+			  cnt_sec = CAL_TIME_SEC;
+		  } else {
+			  cnt_sec -= 1;
+		  }
+	  } else if (state == CAL_FLEXED) {
+		  if (cnt_sec <= 0) {
+			  state = IDLE;
+			  HAL_TIM_Base_Stop_IT(&htim16);
+			  // @henry: start exti interrupts here
+			  // @henry: check GPIOC P0 IDR for mode
+		  } else {
+			  cnt_sec -= 1;
+		  }
+	  }
+	  // @henry: update display here
+  }
+}
 
 /**
   * @brief  The application entry point.
@@ -135,46 +179,54 @@ int main(void)
   MX_ADC4_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
+  MX_TIM16_Init();
+  // @henry: LCD init
 
   /* USER CODE BEGIN 2 */
+  // @henry: DISPLAY cal_unflexed
+  HAL_TIM_Base_Start_IT(&htim16); // @henry: starting timer
+
+  /* USER CODE END 3 */
+}
+
+void Start_AdvancedMode(void) {
   if (IMU_Setup() != SETUP_SUCCESS) {
-    return 1;
+	return 1;
   }
   MCP4728_Init(&hi2c2, output);
   output.channelVref = 0x00;
   output.channel_Gain = 0x00;
 
   reset_aux_frame();
+  t1 = HAL_GetTick();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
-	/* SENSOR READ BEGIN */
-	ADC_Read();
-	IMU_Read();
+  /* SENSOR READ BEGIN */
+  ADC_Read();
+  IMU_Read();
 
-	/* SENSOR READ END */
+  /* SENSOR READ END */
 
-	/* CALCULATIONS BEGIN */
-	calculate_orientation(0.01); // @henry: change freq
-	calculate_gestures();
+  /* CALCULATIONS BEGIN */
+  t2 = HAL_GetTick();
+  calculate_orientation((t2 - t1) / 1000.0f); // @henry: change freq
+  t1 = t2;
+  calculate_gestures();
 
-	/* CALCULATIONS END*/
+  /* CALCULATIONS END*/
 
-	/* OUTPUT BEGIN */
-	int throttle_voltage = 0;
-	int resting_voltage = 2000;
-	int factor = 2000;
-	output.channel_Val[0] = resting_voltage + (gimbal_pitch - 0.5) * factor; // pitch
-	output.channel_Val[1] = resting_voltage + (gimbal_roll - 0.5) * factor; // roll
-	output.channel_Val[2] = throttle_voltage + (gimbal_throttle * 2) * factor; // throttle
-	output.channel_Val[3] = resting_voltage + (gimbal_yaw - 0.5) * factor; // yaw
-	MCP4728_Write_AllChannels_Diff(&hi2c2, output);
+  /* OUTPUT BEGIN */
+  output.channel_Val[0] = resting_voltage + (gimbal_pitch - 0.5) * factor; // pitch
+  output.channel_Val[1] = resting_voltage + (gimbal_roll - 0.5) * factor; // roll
+  output.channel_Val[2] = throttle_voltage + (gimbal_throttle * 2) * factor; // throttle
+  output.channel_Val[3] = resting_voltage + (gimbal_yaw - 0.5) * factor; // yaw
+  MCP4728_Write_AllChannels_Diff(&hi2c2, output);
 
-	/* OUTPUT END */
+  /* OUTPUT END */
   }
-  /* USER CODE END 3 */
 }
 
 /**
@@ -288,8 +340,8 @@ static void MX_ADC1_Init(void)
   }
   /* USER CODE BEGIN ADC1_Init 2 */
   ADC_Calibrate(ADC1);
-  ADC_ADVREGEN(ADC1); // @henry
-  ADC12_COMMON->CCR|= ADC_CCR_VREFEN; // @henry
+//  ADC_ADVREGEN(ADC1); // @henry
+//  ADC12_COMMON->CCR|= ADC_CCR_VREFEN; // @henry
 
   ADC1->CR |= ADC_CR_ADEN; // Enable ADC
 //  while ((ADC1->ISR & ADC_ISR_ADRDY) == 0); // Wait for ADC to be ready
@@ -619,20 +671,58 @@ static void MX_I2C2_Init(void)
 }
 
 /**
+* @brief TIM16 Initialization Function
+* @param None
+* @retval None
+*/
+static void MX_TIM16_Init(void)
+{
+/* USER CODE BEGIN TIM16_Init 0 */
+/* USER CODE END TIM16_Init 0 */
+/* USER CODE BEGIN TIM16_Init 1 */
+/* USER CODE END TIM16_Init 1 */
+htim16.Instance = TIM16;
+htim16.Init.Prescaler = 8000 - 1;
+htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
+htim16.Init.Period = 10000 - 1;
+htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+htim16.Init.RepetitionCounter = 0;
+htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
+{
+Error_Handler();
+}
+/* USER CODE BEGIN TIM16_Init 2 */
+/* USER CODE END TIM16_Init 2 */
+}
+
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
+
+  /*Configure GPIO pin : PC0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

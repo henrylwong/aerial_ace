@@ -31,14 +31,6 @@ float finger_angles[4] = {0, 0, 0, 0};
 //====================================================================================================
 // Functions
 
-/* Returns randomized ADC values for testing purposes */
-//int analog_read(int pin) {
-//    int min = (VCC * RESISTANCE_UNFLEXED/(RESISTANCE_UNFLEXED + RESISTANCE_PULLDOWN)) * (pow(2, ADC_NUM_BITS) - 1)/VCC;
-//    int max = (VCC * RESISTANCE_FLEXED/(RESISTANCE_FLEXED + RESISTANCE_PULLDOWN)) * (pow(2, ADC_NUM_BITS) - 1)/VCC;
-//    int res = rand() % (max - min) + min;
-//    return res;
-//}
-
 void calculate_gestures() {
     for (int i = 0; i < 4; i++) {
         finger_angles[i] = calculate_finger_angle(i);
@@ -84,10 +76,9 @@ int detect_gestures(float* finger_angles) {
  */
 float calculate_finger_angle(int finger_num) {
     float voltage_flex = ADC_vals[finger_num] * VCC / (pow(2, ADC_NUM_BITS) - 1);
-    // float resistance_flex = RESISTANCE_PULLDOWN * (VCC / voltage_flex - 1);
     float resistance_flex = (RESISTANCE_PULLDOWN * voltage_flex) / (VCC - voltage_flex);
-    float angle = map(resistance_flex, RESISTANCE_UNFLEXED, RESISTANCE_FLEXED, 0, 90);
-    return 90 - angle;
+    float angle = 90 - map(resistance_flex, RESISTANCE_UNFLEXED, RESISTANCE_FLEXED, 0, 90);
+    return angle;
 }
 
 //====================================================================================================
