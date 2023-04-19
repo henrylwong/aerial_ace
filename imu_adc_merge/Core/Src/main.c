@@ -24,6 +24,7 @@
 #include "adc_setup.c"
 #include "imu_setup.c"
 #include "dac_setup.h"
+#include "lcd_setup.h"
 #include "calculate_orientation.h"
 #include "calculate_gestures.h"
 #include "utils.h"
@@ -54,6 +55,9 @@ ADC_HandleTypeDef hadc4;
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 
+SPI_HandleTypeDef hspi1;
+DMA_HandleTypeDef hdma_spi1_tx;
+
 TIM_HandleTypeDef htim16;
 
 /* USER CODE BEGIN PV */
@@ -83,15 +87,23 @@ float delay;
 
 int throttle_voltage = 0, resting_voltage = 2000, factor = 2000;
 
-#define MODE_STANDARD 0
-#define MODE_ADVANCED 1
-int mode = MODE_ADVANCED;
+//enum running_modes mode = MODE_ADVANCED;
+volatile int mode = MODE_ADVANCED;
+enum states state = INIT;
+
+int cnt_sec;
+
+int exti_test1, exti_test2;
+int exti_test3 = 0;
+
+DispState currDisp;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_ADC3_Init(void);
@@ -99,6 +111,7 @@ static void MX_ADC4_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_TIM16_Init(void);
+static void MX_SPI1_Init(void);
 
 /* USER CODE BEGIN PFP */
 
@@ -109,39 +122,59 @@ static void MX_TIM16_Init(void);
 
 /* USER CODE END 0 */
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-    if(GPIO_Pin == GPIO_PIN_0) // If The INT Source Is EXTI Line9 (A9 Pin)
-    {
-//      HAL_NVIC_DisableIRQ(IRQn_Type IRQn);
-    	if ();
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    if (GPIO_Pin == GPIO_PIN_0) {
+//		if (HAL_GPIO_ReadPin(GPIOC, 0) == GPIO_PIN_SET) {
+			mode = MODE_ADVANCED;
+			Start_AdvancedMode();
+//		}
+    } else if (GPIO_Pin == GPIO_PIN_1) {
+//    	if (HAL_GPIO_ReadPin(GPIOC, 1) == GPIO_PIN_SET) {
+    		mode = MODE_STANDARD;
+//    	}
     }
+    HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+    exti_test1 = HAL_GPIO_ReadPin(GPIOC, 0);
+    exti_test2 = HAL_GPIO_ReadPin(GPIOC, 1);
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+    HAL_NVIC_EnableIRQ(EXTI1_IRQn);
 }
 
 // Callback: timer has rolled over
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  // Check which version of the timer triggered this callback and toggle LED
-  if (htim == &htim16)
-  {
-	  if (state == CAL_UNFLEXED) {
-		  if (cnt_sec <= 0) {
-			  state = CAL_FLEXED;
-			  cnt_sec = CAL_TIME_SEC;
-		  } else {
-			  cnt_sec -= 1;
-		  }
-	  } else if (state == CAL_FLEXED) {
-		  if (cnt_sec <= 0) {
-			  state = IDLE;
-			  HAL_TIM_Base_Stop_IT(&htim16);
-			  // @henry: start exti interrupts here
-			  // @henry: check GPIOC P0 IDR for mode
-		  } else {
-			  cnt_sec -= 1;
-		  }
-	  }
-	  // @henry: update display here
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  if (htim == &htim16) {
+	if (state == INIT) {
+		if (cnt_sec <= 0) {
+			state = CAL_UNFLEXED;
+			cnt_sec = CAL_TIME_SEC;
+		} else {
+			cnt_sec -= 1;
+		}
+	}
+    if (state == CAL_UNFLEXED) {
+      if (cnt_sec <= 0) {
+        state = CAL_FLEXED;
+        cnt_sec = CAL_TIME_SEC;
+      } else {
+        cnt_sec -= 1;
+      }
+    } else if (state == CAL_FLEXED) {
+      if (cnt_sec <= 0) {
+        state = IDLE;
+        HAL_TIM_Base_Stop_IT(&htim16);
+        HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+        HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+        if (HAL_GPIO_ReadPin(GPIOC, 0) == GPIO_PIN_SET) { // @henry: check PC0 IDR for starting mode
+        	mode = MODE_ADVANCED;
+        } else {
+        	mode = MODE_STANDARD;
+        }
+      } else {
+        cnt_sec -= 1;
+      }
+    }
+    // @henry: update display here
   }
 }
 
@@ -173,6 +206,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
   MX_ADC3_Init();
@@ -180,52 +214,60 @@ int main(void)
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_TIM16_Init();
-  // @henry: LCD init
+  MX_SPI1_Init();
+  SPI1_Setup();
 
   /* USER CODE BEGIN 2 */
-  // @henry: DISPLAY cal_unflexed
-  HAL_TIM_Base_Start_IT(&htim16); // @henry: starting timer
-
-  /* USER CODE END 3 */
-}
-
-void Start_AdvancedMode(void) {
   if (IMU_Setup() != SETUP_SUCCESS) {
-	return 1;
+	  return 1;
   }
   MCP4728_Init(&hi2c2, output);
   output.channelVref = 0x00;
   output.channel_Gain = 0x00;
 
+  state = INIT;
+  cnt_sec = CAL_TIME_SEC;
+//  LCD_Update();
+  HAL_TIM_Base_Start_IT(&htim16); // @henry: starting timer
+  /* USER CODE END 2 */
+//  Start_AdvancedMode();
+
+  while (1) {
+//	   exti_test1 = HAL_GPIO_ReadPin(GPIOC, 0);
+//	   exti_test2 = HAL_GPIO_ReadPin(GPIOC, 1);
+  }
+}
+
+void Start_AdvancedMode(void) {
   reset_aux_frame();
   t1 = HAL_GetTick();
-  /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1) {
-  /* SENSOR READ BEGIN */
-  ADC_Read();
-  IMU_Read();
+  while (mode == MODE_ADVANCED) {
+	  /* SENSOR READ BEGIN */
+	  ADC_Read();
+	  IMU_Read();
 
-  /* SENSOR READ END */
+	  /* SENSOR READ END */
 
-  /* CALCULATIONS BEGIN */
-  t2 = HAL_GetTick();
-  calculate_orientation((t2 - t1) / 1000.0f); // @henry: change freq
-  t1 = t2;
-  calculate_gestures();
+	  /* CALCULATIONS BEGIN */
+	  t2 = HAL_GetTick();
+//	  calculate_orientation((t2 - t1) / 1000.0f); // @henry: adaptive frequency was way too fast
+	  calculate_orientation(0.01);
+	  t1 = t2;
+	  calculate_gestures();
 
-  /* CALCULATIONS END*/
+	  /* CALCULATIONS END*/
 
-  /* OUTPUT BEGIN */
-  output.channel_Val[0] = resting_voltage + (gimbal_pitch - 0.5) * factor; // pitch
-  output.channel_Val[1] = resting_voltage + (gimbal_roll - 0.5) * factor; // roll
-  output.channel_Val[2] = throttle_voltage + (gimbal_throttle * 2) * factor; // throttle
-  output.channel_Val[3] = resting_voltage + (gimbal_yaw - 0.5) * factor; // yaw
-  MCP4728_Write_AllChannels_Diff(&hi2c2, output);
+	  /* OUTPUT BEGIN */
+	  output.channel_Val[0] = resting_voltage + (gimbal_pitch - 0.5) * factor; // pitch
+	  output.channel_Val[1] = resting_voltage + (gimbal_roll - 0.5) * factor; // roll
+	  output.channel_Val[2] = throttle_voltage + (gimbal_throttle * 2) * factor; // throttle
+	  output.channel_Val[3] = resting_voltage + (gimbal_yaw - 0.5) * factor; // yaw
+	  MCP4728_Write_AllChannels_Diff(&hi2c2, output);
 
-  /* OUTPUT END */
+	  /* OUTPUT END */
   }
 }
 
@@ -671,29 +713,76 @@ static void MX_I2C2_Init(void)
 }
 
 /**
+* @brief SPI1 Initialization Function
+* @param None
+* @retval None
+*/
+static void MX_SPI1_Init(void)
+{
+	/* USER CODE BEGIN SPI1_Init 0 */
+	/* USER CODE END SPI1_Init 0 */
+	/* USER CODE BEGIN SPI1_Init 1 */
+	/* USER CODE END SPI1_Init 1 */
+	/* SPI1 parameter configuration*/
+	hspi1.Instance = SPI1;
+	hspi1.Init.Mode = SPI_MODE_MASTER;
+	hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+	hspi1.Init.DataSize = SPI_DATASIZE_4BIT;
+	hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+	hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+	hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+	hspi1.Init.CRCPolynomial = 7;
+	hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+	hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+	if (HAL_SPI_Init(&hspi1) != HAL_OK)
+	{
+	Error_Handler();
+	}
+	/* USER CODE BEGIN SPI1_Init 2 */
+	/* USER CODE END SPI1_Init 2 */
+}
+
+/**
 * @brief TIM16 Initialization Function
 * @param None
 * @retval None
 */
 static void MX_TIM16_Init(void)
 {
-/* USER CODE BEGIN TIM16_Init 0 */
-/* USER CODE END TIM16_Init 0 */
-/* USER CODE BEGIN TIM16_Init 1 */
-/* USER CODE END TIM16_Init 1 */
-htim16.Instance = TIM16;
-htim16.Init.Prescaler = 8000 - 1;
-htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
-htim16.Init.Period = 10000 - 1;
-htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-htim16.Init.RepetitionCounter = 0;
-htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
-{
-Error_Handler();
+	/* USER CODE BEGIN TIM16_Init 0 */
+	/* USER CODE END TIM16_Init 0 */
+	/* USER CODE BEGIN TIM16_Init 1 */
+	/* USER CODE END TIM16_Init 1 */
+	htim16.Instance = TIM16;
+	htim16.Init.Prescaler = 8000 - 1;
+	htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
+	htim16.Init.Period = 1000 - 1;
+	htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	htim16.Init.RepetitionCounter = 0;
+	htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
+	{
+	Error_Handler();
+	}
+	/* USER CODE BEGIN TIM16_Init 2 */
+	/* USER CODE END TIM16_Init 2 */
 }
-/* USER CODE BEGIN TIM16_Init 2 */
-/* USER CODE END TIM16_Init 2 */
+
+/**
+* Enable DMA controller clock
+*/
+static void MX_DMA_Init(void)
+{
+	/* DMA controller clock enable */
+	__HAL_RCC_DMA1_CLK_ENABLE();
+	/* DMA interrupt init */
+	/* DMA1_Channel3_IRQn interrupt configuration */
+	HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
 }
 
 
@@ -705,8 +794,8 @@ Error_Handler();
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
+  /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -715,17 +804,20 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
 
-  /*Configure GPIO pin : PC0 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  /*Configure GPIO pins : PC0 PC1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 1, 0);
+//  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
+//  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  /* USER CODE BEGIN MX_GPIO_Init_2 */
+  /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */

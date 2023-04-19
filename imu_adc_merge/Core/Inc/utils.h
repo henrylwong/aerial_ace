@@ -14,6 +14,10 @@
 #    define M_PI 3.14159265358979323846
 #endif
 
+#define CAL_TIME_SEC 1
+enum running_modes {MODE_STANDARD = 0, MODE_ADVANCED = 1};
+enum states {INIT, CAL_UNFLEXED, CAL_FLEXED, IDLE};
+
 /** struct sensors_vec_s is used to return a vector in a common format. */
 typedef struct {
   union {

@@ -1,0 +1,7 @@
+../Core/Src/lcd_setup.c:4:6:small_delay	8	static
+../Core/Src/lcd_setup.c:10:6:print_labels	24	static
+../Core/Src/lcd_setup.c:19:6:print_title	24	static
+../Core/Src/lcd_setup.c:25:6:print_command	32	static
+../Core/Src/lcd_setup.c:36:6:print_stats	152	static
+../Core/Src/lcd_setup.c:76:6:SPI1_Setup	4	static
+../Core/Src/lcd_setup.c:101:6:LCD_Update	592	static
