@@ -20,6 +20,8 @@ int analog_read(int);
 void calculate_gestures();
 int detect_gestures(float*);
 float calculate_finger_angle(int);
+float calculate_finger_resistance(int);
+void calibrate_init();
 
 #endif
 //=====================================================================================================

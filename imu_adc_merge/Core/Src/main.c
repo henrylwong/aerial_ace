@@ -39,6 +39,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+#define RESISTANCE_RANGE_THRESH 2000
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -74,6 +76,8 @@ sensors_event_t accel;
 sensors_event_t mag;
 
 int ADC_vals[4];
+float resistance_min[4];
+float resistance_max[4];
 
 stmdev_ctx_t dev_ctx_imu;
 stmdev_ctx_t dev_ctx_mag;
@@ -85,7 +89,8 @@ extern dacChannelConfig channels;
 int t1 = 0, t2 = 0;
 float delay;
 
-int throttle_voltage = 0, resting_voltage = 2000, factor = 2000;
+int DAC_resting[4] = {2000, 2000, 0, 2000};
+int DAC_factor[4] = {2000, 2000, 2000, 2000};
 
 //enum running_modes mode = MODE_ADVANCED;
 volatile int mode = MODE_ADVANCED;
@@ -124,52 +129,76 @@ static void MX_SPI1_Init(void);
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == GPIO_PIN_0) {
-//		if (HAL_GPIO_ReadPin(GPIOC, 0) == GPIO_PIN_SET) {
-			mode = MODE_ADVANCED;
-			Start_AdvancedMode();
-//		}
+		if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0) == GPIO_PIN_SET) {
+			Set_AdvancedMode();
+		}
     } else if (GPIO_Pin == GPIO_PIN_1) {
-//    	if (HAL_GPIO_ReadPin(GPIOC, 1) == GPIO_PIN_SET) {
-    		mode = MODE_STANDARD;
-//    	}
+    	if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_1) == GPIO_PIN_SET) {
+    		Set_StandardMode();
+    	}
     }
-    HAL_NVIC_DisableIRQ(EXTI0_IRQn);
-    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
-    exti_test1 = HAL_GPIO_ReadPin(GPIOC, 0);
-    exti_test2 = HAL_GPIO_ReadPin(GPIOC, 1);
-    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-    HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+    exti_test1 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0);
+    exti_test2 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_1);
+}
+
+void Set_AdvancedMode() {
+	mode = MODE_ADVANCED;
+	Start_AdvancedMode();
+}
+void Set_StandardMode() {
+	mode = MODE_STANDARD;
 }
 
 // Callback: timer has rolled over
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   if (htim == &htim16) {
-	if (state == INIT) {
+	if (state == INIT) { // State: INIT
 		if (cnt_sec <= 0) {
+			calibrate_init();
 			state = CAL_UNFLEXED;
 			cnt_sec = CAL_TIME_SEC;
 		} else {
 			cnt_sec -= 1;
 		}
 	}
-    if (state == CAL_UNFLEXED) {
+    if (state == CAL_UNFLEXED) { // State: CAL_UNFLEXED
+      ADC_Read();
+	  for (int i = 0; i < 4; i++) {
+		resistance_min[i] = min(resistance_min[i], calculate_finger_resistance(i));
+	  }
       if (cnt_sec <= 0) {
         state = CAL_FLEXED;
         cnt_sec = CAL_TIME_SEC;
       } else {
         cnt_sec -= 1;
       }
-    } else if (state == CAL_FLEXED) {
+    } else if (state == CAL_FLEXED) { // State: CAL_FLEXED
+      ADC_Read();
+      for (int i = 0; i < 4; i++) {
+    	resistance_max[i] = max(resistance_max[i], calculate_finger_resistance(i));
+      }
       if (cnt_sec <= 0) {
-        state = IDLE;
-        HAL_TIM_Base_Stop_IT(&htim16);
-        HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-        HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-        if (HAL_GPIO_ReadPin(GPIOC, 0) == GPIO_PIN_SET) { // @henry: check PC0 IDR for starting mode
-        	mode = MODE_ADVANCED;
-        } else {
-        	mode = MODE_STANDARD;
-        }
+    	int is_resistance_range_valid = 1;
+    	for (int i = 0; i < 4; i++) {
+    		if (resistance_max[i] - resistance_min[i] < RESISTANCE_RANGE_THRESH) {
+    			is_resistance_range_valid = 0;
+    			break;
+    		}
+    	}
+    	if (is_resistance_range_valid != 0) {
+    		state = IDLE;
+			HAL_TIM_Base_Stop_IT(&htim16);
+			HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+			HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+			if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0) == GPIO_PIN_SET) { // @henry: check PC0 IDR for starting mode
+				Set_AdvancedMode();
+			} else {
+				Set_StandardMode();
+			}
+    	} else {
+    		state = CAL_UNFLEXED;
+    		cnt_sec = CAL_TIME_SEC;
+    	}
       } else {
         cnt_sec -= 1;
       }
@@ -232,10 +261,7 @@ int main(void)
   /* USER CODE END 2 */
 //  Start_AdvancedMode();
 
-  while (1) {
-//	   exti_test1 = HAL_GPIO_ReadPin(GPIOC, 0);
-//	   exti_test2 = HAL_GPIO_ReadPin(GPIOC, 1);
-  }
+  while (1);
 }
 
 void Start_AdvancedMode(void) {
@@ -261,10 +287,10 @@ void Start_AdvancedMode(void) {
 	  /* CALCULATIONS END*/
 
 	  /* OUTPUT BEGIN */
-	  output.channel_Val[0] = resting_voltage + (gimbal_pitch - 0.5) * factor; // pitch
-	  output.channel_Val[1] = resting_voltage + (gimbal_roll - 0.5) * factor; // roll
-	  output.channel_Val[2] = throttle_voltage + (gimbal_throttle * 2) * factor; // throttle
-	  output.channel_Val[3] = resting_voltage + (gimbal_yaw - 0.5) * factor; // yaw
+	  output.channel_Val[0] = DAC_resting[0] + (gimbal_pitch - 0.5) * DAC_factor[0]; // pitch
+	  output.channel_Val[1] = DAC_resting[1] + (gimbal_roll - 0.5) * DAC_factor[1]; // roll
+	  output.channel_Val[2] = DAC_resting[2] + (gimbal_throttle * 2) * DAC_factor[2]; // throttle
+	  output.channel_Val[3] = DAC_resting[3] + (gimbal_yaw - 0.5) * DAC_factor[3]; // yaw
 	  MCP4728_Write_AllChannels_Diff(&hi2c2, output);
 
 	  /* OUTPUT END */

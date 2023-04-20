@@ -45,6 +45,7 @@ typedef struct {
 } sensors_event_t;
 
 float max(float, float);
+float min(float, float);
 float clamp(float, float, float);
 float lerp(float, float, float);
 float map(float, float, float, float, float);
