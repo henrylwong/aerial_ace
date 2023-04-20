@@ -9,12 +9,12 @@ int sectors[CAL_TIME_SEC][6];
 
 int CAL_CIRCLE_RADIUS_INNER = round(CAL_CIRCLE_RADIUS - CAL_CIRCLE_RADIUS / 7);
 
-void small_delay() {
+void LCD_small_delay() {
     nano_wait(10000);
     return;
 }
 
-void print_labels() {
+void LCD_print_labels() {
 	LCD_DrawString(5, 10, WHITE, BLACK, "Aerial Ace Status Window", 16, 0);
 	LCD_DrawFillRectangle(2, 35, 300, 110, LGRAYBLUE);
 	LCD_DrawString(5, 45, WHITE, LGRAYBLUE, "Current Mode", 16, 0);
@@ -22,12 +22,12 @@ void print_labels() {
 	LCD_DrawLine(2, 160, 300, 160, WHITE);
 }
 
-void print_title(DispState currDisp) {
+void LCD_print_title(DispState currDisp) {
 	LCD_DrawString(50, 70, WHITE, LGRAYBLUE, currDisp.title, 16, 0);
 	return;
 }
 
-void print_command(DispState currDisp) {
+void LCD_print_command(DispState currDisp) {
 	LCD_DrawString(0, 120,  WHITE, BLACK, currDisp.command_ln1, 12, 0);
 	if(currDisp.state == CAL_UNFLEXED || currDisp.state == CAL_FLEXED)
 	{
@@ -37,7 +37,7 @@ void print_command(DispState currDisp) {
 	return;
 }
 
-void print_stats(DispState currDisp) {
+void LCD_print_stats(DispState currDisp) {
   char yaw[30];
 	char roll[30];
 	char pitch[30];
@@ -68,178 +68,25 @@ void print_stats(DispState currDisp) {
 	return;
 }
 
-/**
- * Setup SPI1
- * PA5: SPI1 sck
- * PA7: SPI1 mosi
- * PA4: NSS, CS
- */
-void SPI1_Setup()
-{
-  GPIOA->MODER &= ~0xcc00;
-  GPIOA->MODER |= 0x8800; // AFR for pa5 and pa7
-
-  GPIOB->MODER &= ~0xC00000;
-  GPIOA->MODER &= ~0x300;
-  GPIOB->MODER |= 0x400000;
-  GPIOA->MODER |= 0x100;
-
-  GPIOA->MODER &= ~0xc0;
-  GPIOA->MODER |= 0x40;
-  GPIOB->ODR |= 0x800;
-  GPIOA->ODR |= 0x18;
-
-  RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
-  SPI1->CR2 &= ~SPI_CR2_DS;
-  SPI1->CR1 &= ~(SPI_CR1_BR);
-  SPI1->CR1 |= SPI_CR1_MSTR;
-  SPI1->CR1 |= SPI_CR1_SSM | SPI_CR1_SSI;
-  SPI1->CR1 |= SPI_CR1_SPE;
-  return;
-}
-
-// void print_progress(int time_secs, int CX, int CY, int radius, int curTim) {
-// 	int i, j;
-// 	int X0;
-// 	int X1;
-// 	int X2;
-// 	int Y0;
-// 	int Y1;
-// 	int Y2;
-// 	int radius2 = round(radius - radius / 7);
-
-// 	int sidesAB = radius;
-// 	double sideC;
-// 	double Cy;
-// 	double Cx;
-// 	int CyR;
-// 	int CxR;
-
-// 	int startX = CX;
-// 	int startY = CY - radius;
-
-// 	double central_angleD = 360 / time_secs;
-// 	double other_angleD = (180 - central_angleD) / 2;
-
-// 	double central_angleR = central_angleD * M_PI / 180;
-// 	double other_angleR = other_angleD * M_PI / 180;
-
-// 	char strs[3];
-
-// 	if (curTim == time_secs - 1) {
-// 		X0 = CX;
-// 		Y0 = CY - radius2;
-// 	} else {
-// 		X0 = X_arr[time_secs - 2 - curTim];
-// 		Y0 = Y_arr[time_secs - 2 - curTim];
-// 	}
-
-// 	X1 = CX;
-// 	Y1 = CY;
-// 	sidesAB = radius2;
-
-// 	sideC = sqrt(2 * (sidesAB * sidesAB) - 2 * (sidesAB * sidesAB) * cos(central_angleR));
-
-// 	Cy = sin(b[time_secs - 1 - curTim]) * sideC;
-// 	Cx = cos(b[time_secs - 1 - curTim]) * sideC;
-
-// 	CyR = round(Cy);
-// 	CxR = round(Cx);
-
-// 	X2 = X0 + CxR;
-// 	Y2 = Y0 + CyR;
-
-// 	X_arr[time_secs - 1 - curTim] = X2;
-// 	Y_arr[time_secs - 1 - curTim] = Y2;
-
-//   sprintf(strs, "%d", time_secs - curTim);
-// 	LCD_DrawFillRectangle(CX - 8, CY - 8, CX + 8, CY + 8, BLACK);
-// 	LCD_DrawFillTriangle(X0, Y0, X1, Y1, X2, Y2, BLACK);
-// 	LCD_DrawString(CX - 8, CY - 8, WHITE, BLACK, strs, 16, 1);
-// }
-
-void print_progress(int time_secs, int curTim) {
-	if (curTim >= time_secs) {return;}
-
+void LCD_print_progress(int time_secs, int curTim) {
 	char strs[3];
 	sprintf(strs, "%d", curTim);
 
 	LCD_DrawFillTriangle(sectors[curTim][0], sectors[curTim][1], sectors[curTim][2], sectors[curTim][3], sectors[curTim][4], sectors[curTim][5], BLACK);
-	LCD_DrawFillRectangle(CAL_CIRCLE_X - 8, CAL_CIRCLE_Y - 8, CAL_CIRCLE_X + 8, CAL_CIRCLE_Y + 8, BLACK);
+	if (curTim < time_secs) {
+		LCD_DrawFillRectangle(CAL_CIRCLE_X - 8, CAL_CIRCLE_Y - 8, CAL_CIRCLE_X + 8, CAL_CIRCLE_Y + 8, BLACK);
+	}
 	LCD_DrawString(CAL_CIRCLE_X - 8, CAL_CIRCLE_Y - 8, WHITE, BLACK, strs, 16, 1);
 }
 
-// void makeCircle(int time_secs, int CX, int CY, int radius, u16 color) {
-// 	int i, j;
-// 	int X0;
-// 	int X1;
-// 	int X2;
-// 	int Y0;
-// 	int Y1;
-// 	int Y2;
-
-// 	int sidesAB = radius;
-// 	double sideC;
-// 	double Cy;
-// 	double Cx;
-// 	int CyR;
-// 	int CxR;
-
-// 	int startX = CX;
-// 	int startY = CY - radius;
-
-// 	double central_angleD = 360 / time_secs;
-// 	double other_angleD = (180 - central_angleD) / 2;
-
-// 	double central_angleR = central_angleD * M_PI / 180;
-// 	double other_angleR = other_angleD * M_PI / 180;
-
-// 	char strs[3];
-
-// 	//For progress indicator
-// 	for(i = 0; i < time_secs; i++) {
-// 		if (i == 0) {
-// 			a[i] = (90 - other_angleD);
-// 			b[i] = a[i] * M_PI / 180;
-// 		} else {
-// 			a[i] = (360 - ((180 - a[i - 1]) + 2 * other_angleD));
-// 			b[i] = a[i] * M_PI / 180;
-// 		}
-// 	}
-
-// 	X0 = startX;
-// 	Y0 = startY;
-// 	X1 = CX;
-// 	Y1 = CY;
-
-// 	for(i = 0; i < time_secs; i++) {
-// 		sideC = sqrt(2 * (sidesAB * sidesAB) - 2 * (sidesAB * sidesAB) * cos(central_angleR));
-
-// 		Cy = sin(b[i]) * sideC;
-// 		Cx = cos(b[i]) * sideC;
-
-// 		CyR = round(Cy);
-// 		CxR = round(Cx);
-
-// 		X2 = X0 + CxR;
-// 		Y2 = Y0 + CyR;
-// 		LCD_DrawFillTriangle(X0, Y0, X1, Y1, X2, Y2, color);
-// 		X0 = X2;
-// 		Y0 = Y2;
-// 	}
-
-// 	LCD_DrawFillRectangle(startX - 2, startY, CX , CY, color);
-// 	return;
-// }
-
-void makeCircle(int time_secs, int CX, int CY, int radius, u16 color) {
-	calculateCircle(time_secs, CX, CY, radius);
+void LCD_print_circle(int time_secs, int CX, int CY, int radius, u16 color) {
+	LCD_generate_sectors(time_secs, CX, CY, radius);
 	for(int i = 0; i < time_secs; i++) {
 		LCD_DrawFillTriangle(sectors[i][0], sectors[i][1], sectors[i][2], sectors[i][3], sectors[i][4], sectors[i][5], color);
 	}
 }
 
-void calculateCircle(int time_secs, int CX, int CY, int radius) {
+void LCD_generate_sectors(int time_secs, int CX, int CY, int radius) {
 	int X0;
 	int X1;
 	int X2;
@@ -307,8 +154,9 @@ void calculateCircle(int time_secs, int CX, int CY, int radius) {
 	return;
 }
 
-void LCD_Update(float roll, float pitch, float throttle, float yaw, int state, int total_time_sec, int cnt_sec) {
-	print_labels(); // @henry: can be done in init?
+void LCD_update(float roll, float pitch, float throttle, float yaw, int state, int total_time_sec, int cnt_sec) {
+	LCD_print_labels(); // @henry: can be done in init?
+	states old_state = currDisp.state;
 
 	currDisp.state = state;
 	if (currDisp.state == INIT) {
@@ -330,16 +178,18 @@ void LCD_Update(float roll, float pitch, float throttle, float yaw, int state, i
 		strncpy(currDisp.command_ln1, "Toggle switch to change mode to standard!", 199);
 	}
 
-	print_title(currDisp);
+	if (old_state != state) {
+		LCD_print_title(currDisp);
+	}
 
 	if (currDisp.state == CAL_FLEXED || currDisp.state == CAL_UNFLEXED) {
 		if (cnt_sec == CAL_TIME_SEC) {
-			makeCircle(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS, BRED);
-			makeCircle(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS_INNER, BLACK);
-			calculateCircle(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS);
+			LCD_print_circle(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS, BRED);
+			LCD_print_circle(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS_INNER, BLACK);
+			LCD_generate_sectors(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS);
 		}
-		// print_progress(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS, cnt_sec);
-		print_progress(CAL_TIME_SEC, cnt_sec);
+		// LCD_print_progress(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS, cnt_sec);
+		LCD_print_progress(CAL_TIME_SEC, cnt_sec);
 		// LCD_DrawFillRectangle(CAL_CIRCLE_X - 10, CAL_CIRCLE_Y - 10, CAL_CIRCLE_X + 10 , CAL_CIRCLE_Y + 10, BLACK);
 	  // LCD_DrawFillRectangle(CAL_CIRCLE_X - 5, CAL_CIRCLE_Y - CAL_CIRCLE_RADIUS_INNER, CAL_CIRCLE_X + 2 , CAL_CIRCLE_Y, BLACK);
 	} else if (currDisp.state == MODE_ADVANCED) {
@@ -379,8 +229,10 @@ void LCD_Update(float roll, float pitch, float throttle, float yaw, int state, i
 			strncpy(currDisp.throttle_mode, "DOWN", 29);	
 		}
 
-		print_stats(currDisp);
+		LCD_print_stats(currDisp);
 	}
 
-	print_command(currDisp);
+	if (old_state != state) {
+		LCD_print_command(currDisp);
+	}
 }

@@ -45,16 +45,14 @@ extern DispState currDisp;
 extern SPI_HandleTypeDef hspi1;
 extern DMA_HandleTypeDef hdma_spi1_tx;
 
-void SPI1_Setup();
-void print_labels();
-void print_title(DispState currDisp);
-void print_command(DispState currDisp);
-void print_stats(DispState currDisp);
-// void print_progress(int time_secs, int CX, int CY, int radius, int curTim);
-void print_progress(int time_secs, int curTim);
-void makeCircle(int time_secs, int CX, int CY, int radius, u16 color);
-void calculateCircle(int time_secs, int CX, int CY, int radius);
-void LCD_Update(float roll, float pitch, float throttle, float yaw, int state, int total_time_sec, int cnt_sec);
-void small_delay();
+void LCD_print_labels();
+void LCD_print_title(DispState currDisp);
+void LCD_print_command(DispState currDisp);
+void LCD_print_stats(DispState currDisp);
+void LCD_print_progress(int time_secs, int curTim);
+void LCD_print_circle(int time_secs, int CX, int CY, int radius, u16 color);
+void LCD_generate_sectors(int time_secs, int CX, int CY, int radius);
+void LCD_update(float roll, float pitch, float throttle, float yaw, int state, int total_time_sec, int cnt_sec);
+void LCD_small_delay();
 
 #endif

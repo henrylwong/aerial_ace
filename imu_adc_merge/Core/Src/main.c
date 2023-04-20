@@ -205,7 +205,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         cnt_sec -= 1;
       }
     }
-    LCD_Update(gimbal_roll, gimbal_pitch, gimbal_throttle, gimbal_yaw, state, CAL_TIME_SEC, cnt_sec);
+    LCD_update(gimbal_roll, gimbal_pitch, gimbal_throttle, gimbal_yaw, state, CAL_TIME_SEC, cnt_sec);
   }
 }
 
@@ -260,7 +260,7 @@ int main(void)
 
   state = INIT;
   cnt_sec = CAL_TIME_SEC;
-  LCD_Update(gimbal_roll, gimbal_pitch, gimbal_throttle, gimbal_yaw, state, CAL_TIME_SEC, cnt_sec);
+  LCD_update(gimbal_roll, gimbal_pitch, gimbal_throttle, gimbal_yaw, state, CAL_TIME_SEC, cnt_sec);
   HAL_TIM_Base_Start_IT(&htim16); // @henry: starting timer
   /* USER CODE END 2 */
 //  Start_AdvancedMode();
@@ -303,7 +303,7 @@ void Start_AdvancedMode(void) {
 	  cnt_lcd_update += 1;
 	  if (cnt_lcd_update == LCD_UPDATE_PERIOD) {
 		  cnt_lcd_update = 0;
-		  LCD_Update(gimbal_roll, gimbal_pitch, gimbal_throttle, gimbal_yaw, state, CAL_TIME_SEC, cnt_sec);
+		  LCD_update(gimbal_roll, gimbal_pitch, gimbal_throttle, gimbal_yaw, state, CAL_TIME_SEC, cnt_sec);
 	  }
   }
 }
