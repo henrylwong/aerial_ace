@@ -1,3 +1,5 @@
-calculate_gestures.c:34:6:calculate_gestures	8
-calculate_gestures.c:63:5:detect_gestures	3
-calculate_gestures.c:77:7:calculate_finger_angle	1
+calculate_gestures.c:37:6:calculate_gestures	8
+calculate_gestures.c:66:5:detect_gestures	3
+calculate_gestures.c:80:7:calculate_finger_angle	1
+calculate_gestures.c:86:7:calculate_finger_resistance	1
+calculate_gestures.c:92:6:calibrate_init	2

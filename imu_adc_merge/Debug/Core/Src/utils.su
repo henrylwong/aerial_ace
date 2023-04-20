@@ -1,6 +1,7 @@
 ../Core/Src/utils.c:3:7:max	16	static
-../Core/Src/utils.c:10:7:clamp	24	static
-../Core/Src/utils.c:20:7:lerp	24	static
-../Core/Src/utils.c:25:7:map	32	static
-../Core/Src/utils.c:35:7:convert_period_to_freq	16	static
-../Core/Src/utils.c:39:7:convert_freq_to_period	16	static
+../Core/Src/utils.c:10:7:min	16	static
+../Core/Src/utils.c:17:7:clamp	24	static
+../Core/Src/utils.c:27:7:lerp	24	static
+../Core/Src/utils.c:32:7:map	32	static
+../Core/Src/utils.c:42:7:convert_period_to_freq	16	static
+../Core/Src/utils.c:46:7:convert_freq_to_period	16	static

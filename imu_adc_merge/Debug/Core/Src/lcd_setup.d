@@ -31,7 +31,7 @@ Core/Src/lcd_setup.o: ../Core/Src/lcd_setup.c ../Core/Inc/lcd_setup.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_spi_ex.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim_ex.h \
- ../Core/Inc/lcd.h
+ ../Core/Inc/lcd.h ../Core/Inc/utils.h
 ../Core/Inc/lcd_setup.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal.h:
 ../Core/Inc/stm32f3xx_hal_conf.h:
@@ -66,3 +66,4 @@ Core/Src/lcd_setup.o: ../Core/Src/lcd_setup.c ../Core/Inc/lcd_setup.h \
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim.h:
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim_ex.h:
 ../Core/Inc/lcd.h:
+../Core/Inc/utils.h:

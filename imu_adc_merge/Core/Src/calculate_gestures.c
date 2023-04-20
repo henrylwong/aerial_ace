@@ -27,7 +27,7 @@ extern float gimbal_throttle;
 extern int ADC_vals[4];
 short gesture_key = 0;
 float finger_angles[4] = {0, 0, 0, 0};
-int ADC_max_val = 2 << (ADC_NUM_BITS - 1) - 1;
+int ADC_MAX_VAL = 2 << (ADC_NUM_BITS - 1) - 1;
 extern float resistance_min[4];
 extern float resistance_max[4];
 
@@ -84,15 +84,15 @@ float calculate_finger_angle(int finger_num) {
 }
 
 float calculate_finger_resistance(int finger_num) {
-	float voltage_flex = ADC_vals[finger_num] * VCC / ADC_max_val;
+	float voltage_flex = ADC_vals[finger_num] * VCC / ADC_MAX_VAL;
 	float resistance_flex = (RESISTANCE_PULLDOWN * voltage_flex) / (VCC - voltage_flex);
 	return resistance_flex;
 }
 
 void calibrate_init() {
 	for (int i = 0; i < 4; i++) {
-		resistance_min[i] = 0;
-		resistance_max[i] = RESISTANCE_FLEXED;
+		resistance_min[i] = RESISTANCE_FLEXED;
+		resistance_max[i] = 0;
 	}
 }
 

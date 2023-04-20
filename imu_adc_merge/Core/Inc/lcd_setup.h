@@ -3,6 +3,13 @@
 
 #include "stm32f3xx_hal.h"
 #include "lcd.h"
+#include "utils.h"
+
+#define CAL_CIRCLE_X 120
+#define CAL_CIRCLE_Y 240
+#define CAL_CIRCLE_RADIUS 60
+
+#define LCD_UPDATE_PERIOD 5
 
 typedef struct
 {
@@ -12,7 +19,7 @@ typedef struct
 	//   3: cal_flexed
 	//   4: Advanced
 	//   5: Standard
-	int state;
+	states state;
 
 	// For use in Advanced mode
 	char yaw_mode[30]; //0 = rest, 1 = right, 2 = left
@@ -34,6 +41,7 @@ typedef struct
 	int update_stat_command;
 } DispState;
 
+extern DispState currDisp;
 extern SPI_HandleTypeDef hspi1;
 extern DMA_HandleTypeDef hdma_spi1_tx;
 
@@ -42,7 +50,11 @@ void print_labels();
 void print_title(DispState currDisp);
 void print_command(DispState currDisp);
 void print_stats(DispState currDisp);
-void LCD_Update(DispState currDisp, float roll, float pitch, float throttle, float yaw, int state);
+// void print_progress(int time_secs, int CX, int CY, int radius, int curTim);
+void print_progress(int time_secs, int curTim);
+void makeCircle(int time_secs, int CX, int CY, int radius, u16 color);
+void calculateCircle(int time_secs, int CX, int CY, int radius);
+void LCD_Update(float roll, float pitch, float throttle, float yaw, int state, int total_time_sec, int cnt_sec);
 void small_delay();
 
 #endif

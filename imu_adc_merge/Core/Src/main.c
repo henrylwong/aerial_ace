@@ -92,9 +92,9 @@ float delay;
 int DAC_resting[4] = {2000, 2000, 0, 2000};
 int DAC_factor[4] = {2000, 2000, 2000, 2000};
 
-//enum running_modes mode = MODE_ADVANCED;
-volatile int mode = MODE_ADVANCED;
-enum states state = INIT;
+running_modes mode = RUNNING_MODE_ADVANCED;
+//volatile int mode = MODE_ADVANCED;
+states state = INIT;
 
 int cnt_sec;
 
@@ -142,11 +142,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 }
 
 void Set_AdvancedMode() {
-	mode = MODE_ADVANCED;
+	state = MODE_ADVANCED;
+	mode = RUNNING_MODE_ADVANCED;
 	Start_AdvancedMode();
 }
 void Set_StandardMode() {
-	mode = MODE_STANDARD;
+	state = MODE_STANDARD;
+	mode = RUNNING_MODE_STANDARD;
 }
 
 // Callback: timer has rolled over
@@ -160,8 +162,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		} else {
 			cnt_sec -= 1;
 		}
-	}
-    if (state == CAL_UNFLEXED) { // State: CAL_UNFLEXED
+	} else if (state == CAL_UNFLEXED) { // State: CAL_UNFLEXED
       ADC_Read();
 	  for (int i = 0; i < 4; i++) {
 		resistance_min[i] = min(resistance_min[i], calculate_finger_resistance(i));
@@ -186,15 +187,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     		}
     	}
     	if (is_resistance_range_valid != 0) {
-    		state = IDLE;
-			HAL_TIM_Base_Stop_IT(&htim16);
-			HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-			HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-			if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0) == GPIO_PIN_SET) { // @henry: check PC0 IDR for starting mode
-				Set_AdvancedMode();
-			} else {
-				Set_StandardMode();
-			}
+        HAL_TIM_Base_Stop_IT(&htim16);
+        HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+        HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+        if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0) == GPIO_PIN_SET) { // @henry: check PC0 IDR for starting mode
+          state = MODE_ADVANCED;
+          Set_AdvancedMode();
+        } else {
+          state = MODE_STANDARD;
+          Set_StandardMode();
+        }
     	} else {
     		state = CAL_UNFLEXED;
     		cnt_sec = CAL_TIME_SEC;
@@ -203,7 +205,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         cnt_sec -= 1;
       }
     }
-    // @henry: update display here
+    LCD_Update(gimbal_roll, gimbal_pitch, gimbal_throttle, gimbal_yaw, state, CAL_TIME_SEC, cnt_sec);
   }
 }
 
@@ -244,19 +246,21 @@ int main(void)
   MX_I2C2_Init();
   MX_TIM16_Init();
   MX_SPI1_Init();
-  SPI1_Setup();
+//  SPI1_Setup();
+  LCD_Init(0,0,0);
+  LCD_Clear(BLACK);
 
   /* USER CODE BEGIN 2 */
-  if (IMU_Setup() != SETUP_SUCCESS) {
+ if (IMU_Setup() != SETUP_SUCCESS) {
 	  return 1;
-  }
-  MCP4728_Init(&hi2c2, output);
-  output.channelVref = 0x00;
-  output.channel_Gain = 0x00;
+ }
+ MCP4728_Init(&hi2c2, output);
+ output.channelVref = 0x00;
+ output.channel_Gain = 0x00;
 
   state = INIT;
   cnt_sec = CAL_TIME_SEC;
-//  LCD_Update();
+  LCD_Update(gimbal_roll, gimbal_pitch, gimbal_throttle, gimbal_yaw, state, CAL_TIME_SEC, cnt_sec);
   HAL_TIM_Base_Start_IT(&htim16); // @henry: starting timer
   /* USER CODE END 2 */
 //  Start_AdvancedMode();
@@ -267,10 +271,11 @@ int main(void)
 void Start_AdvancedMode(void) {
   reset_aux_frame();
   t1 = HAL_GetTick();
+  int cnt_lcd_update = 0;
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (mode == MODE_ADVANCED) {
+  while (mode == RUNNING_MODE_ADVANCED) {
 	  /* SENSOR READ BEGIN */
 	  ADC_Read();
 	  IMU_Read();
@@ -294,6 +299,12 @@ void Start_AdvancedMode(void) {
 	  MCP4728_Write_AllChannels_Diff(&hi2c2, output);
 
 	  /* OUTPUT END */
+
+	  cnt_lcd_update += 1;
+	  if (cnt_lcd_update == LCD_UPDATE_PERIOD) {
+		  cnt_lcd_update = 0;
+		  LCD_Update(gimbal_roll, gimbal_pitch, gimbal_throttle, gimbal_yaw, state, CAL_TIME_SEC, cnt_sec);
+	  }
   }
 }
 
@@ -757,7 +768,7 @@ static void MX_SPI1_Init(void)
 	hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
 	hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
 	hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
-	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
 	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
 	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
 	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -768,6 +779,15 @@ static void MX_SPI1_Init(void)
 	{
 	Error_Handler();
 	}
+	GPIOB->ODR |= 0x1;
+	GPIOA->ODR |= 0x18;
+
+	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+	SPI1->CR2 &= ~SPI_CR2_DS;
+	SPI1->CR1 &= ~(SPI_CR1_BR);
+	SPI1->CR1 |= SPI_CR1_MSTR;
+	SPI1->CR1 |= SPI_CR1_SSM | SPI_CR1_SSI;
+	SPI1->CR1 |= SPI_CR1_SPE;
 	/* USER CODE BEGIN SPI1_Init 2 */
 	/* USER CODE END SPI1_Init 2 */
 }
@@ -829,6 +849,26 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PA3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PC0 PC1 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;

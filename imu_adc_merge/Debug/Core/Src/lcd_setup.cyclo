@@ -1,7 +1,10 @@
-lcd_setup.c:4:6:small_delay	1
-lcd_setup.c:10:6:print_labels	1
-lcd_setup.c:19:6:print_title	1
-lcd_setup.c:25:6:print_command	4
-lcd_setup.c:36:6:print_stats	1
-lcd_setup.c:76:6:SPI1_Setup	1
-lcd_setup.c:101:6:LCD_Update	11
+lcd_setup.c:12:6:small_delay	1
+lcd_setup.c:17:6:print_labels	1
+lcd_setup.c:25:6:print_title	1
+lcd_setup.c:30:6:print_command	4
+lcd_setup.c:40:6:print_stats	1
+lcd_setup.c:77:6:SPI1_Setup	1
+lcd_setup.c:161:6:print_progress	2
+lcd_setup.c:235:6:makeCircle	2
+lcd_setup.c:242:6:calculateCircle	4
+lcd_setup.c:310:6:LCD_Update	18

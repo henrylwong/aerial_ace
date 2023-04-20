@@ -4,19 +4,21 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-// #include <math.h>
+#include <math.h>
 // #include <time.h>
 
 #define SETUP_SUCCESS 0
 #define SETUP_FAIL -1
 
+#define GIMBAL_IDLE_THRESH 0.02
+
 #ifndef M_PI
 #    define M_PI 3.14159265358979323846
 #endif
 
-#define CAL_TIME_SEC 1
-enum running_modes {MODE_STANDARD = 0, MODE_ADVANCED = 1};
-enum states {INIT, CAL_UNFLEXED, CAL_FLEXED, IDLE};
+#define CAL_TIME_SEC 10
+typedef enum {RUNNING_MODE_STANDARD = 0, RUNNING_MODE_ADVANCED = 1} running_modes;
+typedef enum {INIT, CAL_UNFLEXED, CAL_FLEXED, MODE_STANDARD, MODE_ADVANCED} states;
 
 /** struct sensors_vec_s is used to return a vector in a common format. */
 typedef struct {
