@@ -10,7 +10,7 @@
 #define SETUP_SUCCESS 0
 #define SETUP_FAIL -1
 
-#define GIMBAL_IDLE_THRESH 0.02
+#define GIMBAL_IDLE_THRESH 0.05
 
 #ifndef M_PI
 #    define M_PI 3.14159265358979323846

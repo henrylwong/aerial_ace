@@ -1,7 +1,7 @@
 calculate_orientation.c:34:6:calculate_orientation	1
-calculate_orientation.c:50:6:remap_angles_to_gimbals	1
-calculate_orientation.c:60:6:reset_aux_frame	1
-calculate_orientation.c:70:6:convert_quaternion_to_euler	3
-calculate_orientation.c:91:6:MadgwickAHRSupdate	7
-calculate_orientation.c:190:6:MadgwickAHRSupdateIMU	4
-calculate_orientation.c:262:7:invSqrt	1
+calculate_orientation.c:50:6:remap_angles_to_gimbals	3
+calculate_orientation.c:66:6:reset_aux_frame	1
+calculate_orientation.c:76:6:convert_quaternion_to_euler	3
+calculate_orientation.c:98:6:MadgwickAHRSupdate	7
+calculate_orientation.c:197:6:MadgwickAHRSupdateIMU	4
+calculate_orientation.c:269:7:invSqrt	1

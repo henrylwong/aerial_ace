@@ -188,7 +188,6 @@ static void tft_select(int val)
             ;
         GPIOA->BSRR = 1<<4;
     } else {
-        //while((GPIOB->ODR & (1<<10)) == 0) {
     	while((GPIOA->ODR & (1<<4)) == 0) {
             ; // If CS is already low, this is an error.  Loop forever.
             // This has happened because something called a drawing subroutine
@@ -605,6 +604,7 @@ void LCD_DrawFillTriangle(u16 x0,u16 y0, u16 x1,u16 y1, u16 x2,u16 y2, u16 c)
             b = x2;
     }
         _LCD_Fill(a,y0,b,y0,c);
+    lcddev.select(0); // @henry: added in select()
     return;
     }
     dx01 = x1 - x0;

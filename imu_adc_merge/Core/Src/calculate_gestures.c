@@ -8,7 +8,7 @@
 
 #define VCC 3.3
 #define ADC_NUM_BITS 12
-#define RESISTANCE_FLEXED 30 * 1000
+#define RESISTANCE_FLEXED 45 * 1000
 #define RESISTANCE_UNFLEXED 10 * 1000
 #define RESISTANCE_PULLDOWN 20 * 1000
 
@@ -27,7 +27,7 @@ extern float gimbal_throttle;
 extern int ADC_vals[4];
 short gesture_key = 0;
 float finger_angles[4] = {0, 0, 0, 0};
-int ADC_MAX_VAL = 2 << (ADC_NUM_BITS - 1) - 1;
+int ADC_MAX_VAL = (2 << ADC_NUM_BITS - 1) - 1;
 extern float resistance_min[4];
 extern float resistance_max[4];
 
@@ -49,10 +49,10 @@ void calculate_gestures() {
             gimbal_yaw = 0.5 - lerp(0, 0.5, finger_angles[FINGER_PINKY_IDX] / 90);
             gimbal_throttle = lerp(0, 1, max(finger_angles[FINGER_MIDDLE_IDX], finger_angles[FINGER_RING_IDX]) / 90);
             break;
-        case 0b0110: // throttle
-            gimbal_yaw = 0;
-            gimbal_throttle = lerp(0, 1, max(finger_angles[FINGER_MIDDLE_IDX], finger_angles[FINGER_RING_IDX]) / 90);
-            break;
+        // case 0b0110: // throttle
+        //     gimbal_yaw = 0;
+        //     gimbal_throttle = lerp(0, 1, max(finger_angles[FINGER_MIDDLE_IDX], finger_angles[FINGER_RING_IDX]) / 90);
+        //     break;
         default: // no-op
         	gimbal_yaw = 0.5;
         	gimbal_throttle = 0;
@@ -92,7 +92,7 @@ float calculate_finger_resistance(int finger_num) {
 void calibrate_init() {
 	for (int i = 0; i < 4; i++) {
 		resistance_min[i] = RESISTANCE_FLEXED;
-		resistance_max[i] = 0;
+		resistance_max[i] = RESISTANCE_UNFLEXED;
 	}
 }
 

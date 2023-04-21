@@ -9,7 +9,7 @@
 #define CAL_CIRCLE_Y 240
 #define CAL_CIRCLE_RADIUS 60
 
-#define LCD_UPDATE_PERIOD 5
+#define LCD_UPDATE_PERIOD 10
 
 typedef struct
 {

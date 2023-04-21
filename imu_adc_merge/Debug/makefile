@@ -61,7 +61,7 @@ main-build: imu_adc_merge.elf secondary-outputs
 
 # Tool invocations
 imu_adc_merge.elf imu_adc_merge.map: $(OBJS) $(USER_OBJS) /Users/kystlen/STM32CubeIDE/workspace_1.12.0/imu_adc_merge/STM32F303VCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "imu_adc_merge.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/kystlen/STM32CubeIDE/workspace_1.12.0/imu_adc_merge/STM32F303VCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="imu_adc_merge.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "imu_adc_merge.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/kystlen/STM32CubeIDE/workspace_1.12.0/imu_adc_merge/STM32F303VCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="imu_adc_merge.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

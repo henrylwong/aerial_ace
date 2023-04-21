@@ -28,17 +28,15 @@ void LCD_print_title(DispState currDisp) {
 }
 
 void LCD_print_command(DispState currDisp) {
+	
 	LCD_DrawString(0, 120,  WHITE, BLACK, currDisp.command_ln1, 12, 0);
-	if(currDisp.state == CAL_UNFLEXED || currDisp.state == CAL_FLEXED)
-	{
-		LCD_DrawString(0, 130,  WHITE, BLACK, currDisp.command_ln2, 12, 0);
-	}
+	LCD_DrawString(0, 130,  WHITE, BLACK, currDisp.command_ln2, 12, 0);
 	for(int i = 0; i < 1000; i++);
 	return;
 }
 
 void LCD_print_stats(DispState currDisp) {
-  char yaw[30];
+	char yaw[30];
 	char roll[30];
 	char pitch[30];
 	char throttle[30];
@@ -52,19 +50,19 @@ void LCD_print_stats(DispState currDisp) {
 	LCD_DrawLine(160, 165, 160, 330, WHITE);
 
 	LCD_DrawString(10, 175, WHITE, BLACK, "PITCH", 16, 0); //90
-	LCD_DrawString(10, 210, WHITE, BLACK, "YAW", 16, 0); //150
-	LCD_DrawString(10, 245, WHITE, BLACK, "ROLL", 16, 0); //200
-	LCD_DrawString(10, 280, WHITE, BLACK, "THROTTLE", 16, 0); //250
+	LCD_DrawString(10, 210, WHITE, BLACK, "ROLL", 16, 0); //150
+	LCD_DrawString(10, 245, WHITE, BLACK, "THROTTLE", 16, 0); //200
+	LCD_DrawString(10, 280, WHITE, BLACK, "YAW", 16, 0); //250
 
 	LCD_DrawString(100, 175, WHITE, BLACK, pitch , 16, 0);
-	LCD_DrawString(100, 210, WHITE, BLACK, yaw, 16, 0);
-	LCD_DrawString(100, 245, WHITE, BLACK, roll, 16, 0);
-	LCD_DrawString(100, 280, WHITE, BLACK, throttle , 16, 0);
+	LCD_DrawString(100, 210, WHITE, BLACK, roll, 16, 0);
+	LCD_DrawString(100, 245, WHITE, BLACK, throttle, 16, 0);
+	LCD_DrawString(100, 280, WHITE, BLACK, yaw , 16, 0);
 
 	LCD_DrawString(170, 175, WHITE, BLACK, currDisp.pitch_mode, 16, 0);
-	LCD_DrawString(170, 210, WHITE, BLACK, currDisp.yaw_mode, 16, 0);
-	LCD_DrawString(170, 245, WHITE, BLACK, currDisp.roll_mode, 16, 0);
-	LCD_DrawString(170, 280, WHITE, BLACK, currDisp.throttle_mode, 16, 0);
+	LCD_DrawString(170, 210, WHITE, BLACK, currDisp.roll_mode, 16, 0);
+	LCD_DrawString(170, 245, WHITE, BLACK, currDisp.throttle_mode, 16, 0);
+	LCD_DrawString(170, 280, WHITE, BLACK, currDisp.yaw_mode, 16, 0);
 	return;
 }
 
@@ -72,10 +70,10 @@ void LCD_print_progress(int time_secs, int curTim) {
 	char strs[3];
 	sprintf(strs, "%d", curTim);
 
-	LCD_DrawFillTriangle(sectors[curTim][0], sectors[curTim][1], sectors[curTim][2], sectors[curTim][3], sectors[curTim][4], sectors[curTim][5], BLACK);
 	if (curTim < time_secs) {
-		LCD_DrawFillRectangle(CAL_CIRCLE_X - 8, CAL_CIRCLE_Y - 8, CAL_CIRCLE_X + 8, CAL_CIRCLE_Y + 8, BLACK);
+		LCD_DrawFillTriangle(sectors[curTim][0], sectors[curTim][1], sectors[curTim][2], sectors[curTim][3], sectors[curTim][4], sectors[curTim][5], BLACK);
 	}
+	LCD_DrawFillRectangle(CAL_CIRCLE_X - 8, CAL_CIRCLE_Y - 8, CAL_CIRCLE_X + 8, CAL_CIRCLE_Y + 8, BLACK);
 	LCD_DrawString(CAL_CIRCLE_X - 8, CAL_CIRCLE_Y - 8, WHITE, BLACK, strs, 16, 1);
 }
 
@@ -156,31 +154,31 @@ void LCD_generate_sectors(int time_secs, int CX, int CY, int radius) {
 
 void LCD_update(float roll, float pitch, float throttle, float yaw, int state, int total_time_sec, int cnt_sec) {
 	LCD_print_labels(); // @henry: can be done in init?
-	states old_state = currDisp.state;
 
 	currDisp.state = state;
 	if (currDisp.state == INIT) {
 		strncpy(currDisp.title, "INITIALISING", 29);
-		strncpy(currDisp.command_ln1, "...Loading...", 199);
+		strncpy(currDisp.command_ln1, " .            ...loading...            ", 199);
+		strncpy(currDisp.command_ln2, "                                       ", 199);
 	} else if(currDisp.state == CAL_UNFLEXED) {
 		strncpy(currDisp.title, "CALIBRATION", 29);
 		strncpy(currDisp.command_ln1, "Please unflex your fingers until finger", 199);
-		strncpy(currDisp.command_ln2, "angles are 0 degrees.", 199);
+		strncpy(currDisp.command_ln2, "angles are 0 degrees.                  ", 199);
 	} else if(currDisp.state == CAL_FLEXED) {
 		strncpy(currDisp.title, "CALIBRATION", 29);
-		strncpy(currDisp.command_ln1, "Please flex your fingers until finger", 199);
-		strncpy(currDisp.command_ln2, "angles are 90 degrees.", 199);
+		strncpy(currDisp.command_ln1, "Please flex your fingers until finger  ", 199);
+		strncpy(currDisp.command_ln2, "angles are 90 degrees.                 ", 199);
 	} else if(currDisp.state == MODE_STANDARD) {
 		strncpy(currDisp.title, "STANDARD", 29);
-		strncpy(currDisp.command_ln1, "Toggle switch to change mode to advanced!", 199);
+		strncpy(currDisp.command_ln1, "Toggle switch for advanced mode!       ", 199);
+		strncpy(currDisp.command_ln2, "                                       ", 199);
 	} else if(currDisp.state == MODE_ADVANCED) {
 		strncpy(currDisp.title, "ADVANCED", 29);
-		strncpy(currDisp.command_ln1, "Toggle switch to change mode to standard!", 199);
+		strncpy(currDisp.command_ln1, "Toggle switch for standard mode!       ", 199);
+		strncpy(currDisp.command_ln2, "                                       ", 199);
 	}
 
-	if (old_state != state) {
-		LCD_print_title(currDisp);
-	}
+	LCD_print_title(currDisp);
 
 	if (currDisp.state == CAL_FLEXED || currDisp.state == CAL_UNFLEXED) {
 		if (cnt_sec == CAL_TIME_SEC) {
@@ -200,15 +198,15 @@ void LCD_update(float roll, float pitch, float throttle, float yaw, int state, i
 		if (roll >= 0.5 + GIMBAL_IDLE_THRESH) {
 			strncpy(currDisp.roll_mode, "RIGHT", 29);
 		} else if (roll <= 0.5 - GIMBAL_IDLE_THRESH) {
-			strncpy(currDisp.roll_mode, "LEFT", 29);
+			strncpy(currDisp.roll_mode, "LEFT ", 29);
 		} else {
 			strncpy(currDisp.roll_mode, "-----", 29);
 		}
 
 		if (pitch >= 0.5 + GIMBAL_IDLE_THRESH) {
-			strncpy(currDisp.pitch_mode, "UP", 29);
+			strncpy(currDisp.pitch_mode, "UP   ", 29);
 		} else if (pitch <= 0.5 - GIMBAL_IDLE_THRESH) {
-			strncpy(currDisp.pitch_mode, "DOWN", 29);
+			strncpy(currDisp.pitch_mode, "DOWN ", 29);
 		} else {
 			strncpy(currDisp.pitch_mode, "-----", 29);	
 		}
@@ -216,23 +214,23 @@ void LCD_update(float roll, float pitch, float throttle, float yaw, int state, i
 		if (yaw >= 0.5 + GIMBAL_IDLE_THRESH) {
 			strncpy(currDisp.yaw_mode, "RIGHT", 29);
 		} else if (yaw <= 0.5 - GIMBAL_IDLE_THRESH) {
-			strncpy(currDisp.yaw_mode, "LEFT", 29);
+			strncpy(currDisp.yaw_mode, "LEFT ", 29);
 		} else {
 			strncpy(currDisp.yaw_mode, "-----", 29);
 		}
 
 		if (throttle >= 0.5) {
-			strncpy(currDisp.throttle_mode, "UP", 29);
+			strncpy(currDisp.throttle_mode, "UP   ", 29);
 		} else if (throttle < 0 + GIMBAL_IDLE_THRESH) {
 			strncpy(currDisp.throttle_mode, "-----", 29);	
 		} else {
-			strncpy(currDisp.throttle_mode, "DOWN", 29);	
+			strncpy(currDisp.throttle_mode, "DOWN ", 29);	
 		}
 
 		LCD_print_stats(currDisp);
+	} else if (currDisp.state == MODE_STANDARD) {
+		LCD_DrawFillRectangle(10, 165, 230, 330, BLACK);
 	}
 
-	if (old_state != state) {
-		LCD_print_command(currDisp);
-	}
+	LCD_print_command(currDisp);
 }

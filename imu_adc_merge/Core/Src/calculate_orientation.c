@@ -51,7 +51,13 @@ void remap_angles_to_gimbals() {
 	remapped_angle_x = (angle_x + atan2_offset) / (2 * M_PI);
 	remapped_angle_y = (angle_y + asin_offset) / (M_PI);
 	gimbal_roll = lerp(0, 1, remapped_angle_x);
-	gimbal_pitch = lerp(0, 1, remapped_angle_y);
+	if (fabs(gimbal_roll - 0.5) <= GIMBAL_IDLE_THRESH) {
+		gimbal_roll = 0.5;
+	}
+	gimbal_pitch = 1 - lerp(0, 1, remapped_angle_y);
+	if (fabs(gimbal_pitch - 0.5) <= GIMBAL_IDLE_THRESH) {
+		gimbal_pitch = 0.5;
+	}
 }
 
 /*
@@ -79,8 +85,9 @@ void convert_quaternion_to_euler() {
 	t2 = t2 > 1.0 ? 1.0 : t2;
 	t2 = t2 < -1.0 ? -1.0 : t2;
 
-	angle_y = asin(t2);
-	angle_x = atan2(t3, t4);
+	// @henry: switch x, y for roll/pitch
+	angle_x = asin(t2);
+	angle_y = atan2(t3, t4);
 	// angle_z = atan2(t1, t0);
 }
 
