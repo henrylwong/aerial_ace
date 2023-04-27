@@ -40,9 +40,6 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define INIT_TIME_SEC 5
-#define RESISTANCE_RANGE_THRESH 10000 // @henry: change thresh later
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -91,11 +88,10 @@ extern dacChannelConfig channels;
 int t1 = 0, t2 = 0;
 float delay;
 
-int DAC_resting[4] = {1489, 1514, 0, 1448};
-int DAC_factor[4] = {1500, 1500, 1500, 1500};
+float voltage_vals[4] = {1.64, 1.57, 0.1, 1.77};
+int DAC_resting[4] = {0, 0, 0, 0};
+int DAC_factor[4] = {1500, 2000, 1500, 1500};
 
-running_modes mode = RUNNING_MODE_ADVANCED;
-//volatile int mode = MODE_ADVANCED;
 states state = INIT;
 int did_state_change;
 
@@ -117,6 +113,10 @@ static void MX_I2C1_Init(void);
 static void MX_I2C2_Init(void);
 static void MX_TIM16_Init(void);
 static void MX_SPI1_Init(void);
+
+void Set_AdvancedMode(int start_adv);
+void Set_StandardMode(void);
+void Start_AdvancedMode(void);
 
 /* USER CODE BEGIN PFP */
 
@@ -143,14 +143,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 void Set_AdvancedMode(int start_adv) {
 	state = MODE_ADVANCED;
-	mode = RUNNING_MODE_ADVANCED;
   if (start_adv == 1) {
 	  Start_AdvancedMode();
   }
 }
 void Set_StandardMode() {
 	state = MODE_STANDARD;
-	mode = RUNNING_MODE_STANDARD;
 }
 
 // Callback: timer has rolled over
@@ -257,21 +255,31 @@ int main(void)
   LCD_Clear(BLACK);
 
   /* USER CODE BEGIN 2 */
- if (IMU_Setup() != SETUP_SUCCESS) {
+  if (IMU_Setup() != SETUP_SUCCESS) {
 	  return 1;
- }
- MCP4728_Init(&hi2c2, output);
- output.channelVref = 0x00;
- output.channel_Gain = 0x00;
+  }
+  MCP4728_Init(&hi2c2, output);
+  output.channelVref = 0x00;
+  output.channel_Gain = 0x00;
+  convert_voltage_to_ADC(voltage_vals);
+  output.channel_Val[0] = DAC_resting[0]; // pitch
+  output.channel_Val[1] = DAC_resting[1]; // roll
+  output.channel_Val[2] = DAC_resting[2]; // throttle
+  output.channel_Val[3] = DAC_resting[3]; // yaw
 
   state = INIT;
   cnt_sec = INIT_TIME_SEC;
-//  LCD_update(gimbal_roll, gimbal_pitch, gimbal_throttle, gimbal_yaw, state, CAL_TIME_SEC, cnt_sec);
   HAL_TIM_Base_Start_IT(&htim16); // @henry: starting timer
+
   /* USER CODE END 2 */
-//  Start_AdvancedMode();
 
   while (1);
+}
+
+int convert_voltage_to_ADC(float* voltage_vals) {
+	for (int i = 0; i < 4; i++) {
+		DAC_resting[i] = voltage_vals[i] * ((2 << ADC_NUM_BITS - 1) - 1) / VCC;
+	}
 }
 
 void Start_AdvancedMode(void) {
@@ -280,7 +288,7 @@ void Start_AdvancedMode(void) {
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (mode == RUNNING_MODE_ADVANCED) {
+  while (state == MODE_ADVANCED) {
 	  /* SENSOR READ BEGIN */
 	  ADC_Read();
 	  IMU_Read();

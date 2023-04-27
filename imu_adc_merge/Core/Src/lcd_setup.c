@@ -16,14 +16,14 @@ void LCD_small_delay() {
 
 void LCD_print_labels() {
 	LCD_DrawString(5, 10, WHITE, BLACK, "Aerial Ace Status Window", 16, 0);
-	LCD_DrawFillRectangle(2, 35, 300, 110, LGRAYBLUE);
-	LCD_DrawString(5, 45, WHITE, LGRAYBLUE, "Current Mode", 16, 0);
+	LCD_DrawFillRectangle(2, 35, 300, 110, BRED);
+	LCD_DrawString(5, 45, BLACK, BRED, "Current Mode", 16, 0);
 	LCD_DrawLine(2, 30, 300, 30, WHITE);
 	LCD_DrawLine(2, 160, 300, 160, WHITE);
 }
 
 void LCD_print_title(DispState currDisp) {
-	LCD_DrawString(50, 70, WHITE, LGRAYBLUE, currDisp.title, 16, 0);
+	LCD_DrawString(50, 70, BLACK, BRED, currDisp.title, 16, 0);
 	return;
 }
 
@@ -157,23 +157,23 @@ void LCD_update(float roll, float pitch, float throttle, float yaw, int state, i
 
 	currDisp.state = state;
 	if (currDisp.state == INIT) {
-		strncpy(currDisp.title, "INITIALISING", 29);
+		strncpy(currDisp.title, "INITIALISING        ", 29);
 		strncpy(currDisp.command_ln1, " .            ...loading...            ", 199);
 		strncpy(currDisp.command_ln2, "                                       ", 199);
 	} else if(currDisp.state == CAL_UNFLEXED) {
-		strncpy(currDisp.title, "CALIBRATION", 29);
+		strncpy(currDisp.title, "CALIBRATION - UNFLEX", 29);
 		strncpy(currDisp.command_ln1, "Please unflex your fingers until finger", 199);
 		strncpy(currDisp.command_ln2, "angles are 0 degrees.                  ", 199);
 	} else if(currDisp.state == CAL_FLEXED) {
-		strncpy(currDisp.title, "CALIBRATION", 29);
+		strncpy(currDisp.title, "CALIBRATION - FLEX  ", 29);
 		strncpy(currDisp.command_ln1, "Please flex your fingers until finger  ", 199);
 		strncpy(currDisp.command_ln2, "angles are 90 degrees.                 ", 199);
 	} else if(currDisp.state == MODE_STANDARD) {
-		strncpy(currDisp.title, "STANDARD", 29);
+		strncpy(currDisp.title, "STANDARD            ", 29);
 		strncpy(currDisp.command_ln1, "Toggle switch for advanced mode!       ", 199);
 		strncpy(currDisp.command_ln2, "                                       ", 199);
 	} else if(currDisp.state == MODE_ADVANCED) {
-		strncpy(currDisp.title, "ADVANCED", 29);
+		strncpy(currDisp.title, "ADVANCED            ", 29);
 		strncpy(currDisp.command_ln1, "Toggle switch for standard mode!       ", 199);
 		strncpy(currDisp.command_ln2, "                                       ", 199);
 	}
@@ -212,9 +212,9 @@ void LCD_update(float roll, float pitch, float throttle, float yaw, int state, i
 		}
 
 		if (yaw >= 0.5 + GIMBAL_IDLE_THRESH) {
-			strncpy(currDisp.yaw_mode, "RIGHT", 29);
+			strncpy(currDisp.yaw_mode, "LEFT", 29);
 		} else if (yaw <= 0.5 - GIMBAL_IDLE_THRESH) {
-			strncpy(currDisp.yaw_mode, "LEFT ", 29);
+			strncpy(currDisp.yaw_mode, "RIGHT ", 29);
 		} else {
 			strncpy(currDisp.yaw_mode, "-----", 29);
 		}

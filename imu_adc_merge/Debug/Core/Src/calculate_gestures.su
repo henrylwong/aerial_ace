@@ -1,5 +1,5 @@
-../Core/Src/calculate_gestures.c:37:6:calculate_gestures	16	static
-../Core/Src/calculate_gestures.c:66:5:detect_gestures	24	static
-../Core/Src/calculate_gestures.c:80:7:calculate_finger_angle	24	static
-../Core/Src/calculate_gestures.c:86:7:calculate_finger_resistance	32	static
-../Core/Src/calculate_gestures.c:92:6:calibrate_init	16	static
+../Core/Src/calculate_gestures.c:24:6:calculate_gestures	24	static
+../Core/Src/calculate_gestures.c:45:5:detect_gestures	24	static
+../Core/Src/calculate_gestures.c:61:7:calculate_finger_angle	24	static
+../Core/Src/calculate_gestures.c:67:7:calculate_finger_resistance	32	static
+../Core/Src/calculate_gestures.c:73:6:calibrate_init	16	static

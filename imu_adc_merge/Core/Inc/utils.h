@@ -16,8 +16,11 @@
 #    define M_PI 3.14159265358979323846
 #endif
 
+// Resistance ranged used in Calibration Unflexed/Flexed states
+#define RESISTANCE_RANGE_THRESH 10000
+
+#define INIT_TIME_SEC 5
 #define CAL_TIME_SEC 10
-typedef enum {RUNNING_MODE_STANDARD = 0, RUNNING_MODE_ADVANCED = 1} running_modes;
 typedef enum {INIT, CAL_UNFLEXED, CAL_FLEXED, MODE_STANDARD, MODE_ADVANCED} states;
 
 /** struct sensors_vec_s is used to return a vector in a common format. */
