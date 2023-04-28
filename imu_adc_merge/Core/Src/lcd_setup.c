@@ -16,14 +16,14 @@ void LCD_small_delay() {
 
 void LCD_print_labels() {
 	LCD_DrawString(5, 10, WHITE, BLACK, "Aerial Ace Status Window", 16, 0);
-	LCD_DrawFillRectangle(2, 35, 300, 110, BRED);
-	LCD_DrawString(5, 45, BLACK, BRED, "Current Mode", 16, 0);
+	LCD_DrawFillRectangle(2, 35, 300, 110, currDisp.color);
+	LCD_DrawString(5, 45, BLACK, currDisp.color, "Current Mode", 16, 0);
 	LCD_DrawLine(2, 30, 300, 30, WHITE);
 	LCD_DrawLine(2, 160, 300, 160, WHITE);
 }
 
 void LCD_print_title(DispState currDisp) {
-	LCD_DrawString(50, 70, BLACK, BRED, currDisp.title, 16, 0);
+	LCD_DrawString(50, 70, BLACK, currDisp.color, currDisp.title, 16, 0);
 	return;
 }
 
@@ -153,43 +153,45 @@ void LCD_generate_sectors(int time_secs, int CX, int CY, int radius) {
 }
 
 void LCD_update(float roll, float pitch, float throttle, float yaw, int state, int total_time_sec, int cnt_sec) {
-	LCD_print_labels(); // @henry: can be done in init?
-
 	currDisp.state = state;
 	if (currDisp.state == INIT) {
 		strncpy(currDisp.title, "INITIALISING        ", 29);
 		strncpy(currDisp.command_ln1, " .            ...loading...            ", 199);
 		strncpy(currDisp.command_ln2, "                                       ", 199);
+		currDisp.color = LGRAY;
 	} else if(currDisp.state == CAL_UNFLEXED) {
 		strncpy(currDisp.title, "CALIBRATION - UNFLEX", 29);
 		strncpy(currDisp.command_ln1, "Please unflex your fingers until finger", 199);
 		strncpy(currDisp.command_ln2, "angles are 0 degrees.                  ", 199);
+		currDisp.color = GRED;
 	} else if(currDisp.state == CAL_FLEXED) {
 		strncpy(currDisp.title, "CALIBRATION - FLEX  ", 29);
 		strncpy(currDisp.command_ln1, "Please flex your fingers until finger  ", 199);
 		strncpy(currDisp.command_ln2, "angles are 90 degrees.                 ", 199);
+		currDisp.color = GBLUE;
 	} else if(currDisp.state == MODE_STANDARD) {
 		strncpy(currDisp.title, "STANDARD            ", 29);
 		strncpy(currDisp.command_ln1, "Toggle switch for advanced mode!       ", 199);
 		strncpy(currDisp.command_ln2, "                                       ", 199);
+		currDisp.color = BROWN;
 	} else if(currDisp.state == MODE_ADVANCED) {
 		strncpy(currDisp.title, "ADVANCED            ", 29);
 		strncpy(currDisp.command_ln1, "Toggle switch for standard mode!       ", 199);
 		strncpy(currDisp.command_ln2, "                                       ", 199);
+		currDisp.color = CYAN;
 	}
 
+	LCD_print_labels(); // @henry: can be done in init?
 	LCD_print_title(currDisp);
 
 	if (currDisp.state == CAL_FLEXED || currDisp.state == CAL_UNFLEXED) {
 		if (cnt_sec == CAL_TIME_SEC) {
-			LCD_print_circle(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS, BRED);
+			LCD_print_circle(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS, currDisp.color);
 			LCD_print_circle(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS_INNER, BLACK);
 			LCD_generate_sectors(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS);
 		}
-		// LCD_print_progress(CAL_TIME_SEC, CAL_CIRCLE_X, CAL_CIRCLE_Y, CAL_CIRCLE_RADIUS, cnt_sec);
 		LCD_print_progress(CAL_TIME_SEC, cnt_sec);
-		// LCD_DrawFillRectangle(CAL_CIRCLE_X - 10, CAL_CIRCLE_Y - 10, CAL_CIRCLE_X + 10 , CAL_CIRCLE_Y + 10, BLACK);
-	  // LCD_DrawFillRectangle(CAL_CIRCLE_X - 5, CAL_CIRCLE_Y - CAL_CIRCLE_RADIUS_INNER, CAL_CIRCLE_X + 2 , CAL_CIRCLE_Y, BLACK);
+
 	} else if (currDisp.state == MODE_ADVANCED) {
 		currDisp.pitch_num = pitch;
 		currDisp.yaw_num = yaw;

@@ -88,9 +88,9 @@ extern dacChannelConfig channels;
 int t1 = 0, t2 = 0;
 float delay;
 
-float voltage_vals[4] = {1.64, 1.57, 0.1, 1.77};
+float voltage_vals[4] = {1.64, 1.57, 0.1, 1.79};
 int DAC_resting[4] = {0, 0, 0, 0};
-int DAC_factor[4] = {1500, 2000, 1500, 1500};
+int DAC_factor[4] = {3000, 3000, 1500, 1500};
 
 states state = INIT;
 int did_state_change;
@@ -270,7 +270,8 @@ int main(void)
   state = INIT;
   cnt_sec = INIT_TIME_SEC;
   HAL_TIM_Base_Start_IT(&htim16); // @henry: starting timer
-
+//  state = MODE_ADVANCED;
+//  Start_AdvancedMode();
   /* USER CODE END 2 */
 
   while (1);
@@ -298,7 +299,7 @@ void Start_AdvancedMode(void) {
 	  /* CALCULATIONS BEGIN */
 	  t2 = HAL_GetTick();
 //	  calculate_orientation((t2 - t1) / 1000.0f); // @henry: adaptive frequency was way too fast
-	  calculate_orientation(0.015);
+	  calculate_orientation(0.02);
 	  t1 = t2;
 	  calculate_gestures();
 

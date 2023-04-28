@@ -20,6 +20,7 @@ typedef struct
 	//   4: Advanced
 	//   5: Standard
 	states state;
+	u16 color;
 
 	// For use in Advanced mode
 	char yaw_mode[30]; //0 = rest, 1 = right, 2 = left

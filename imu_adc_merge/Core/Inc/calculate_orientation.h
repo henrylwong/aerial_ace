@@ -7,7 +7,7 @@
 // Definitions
 
 //#define sampleFreq	512.0f		// sample frequency in Hz (orig 512)
-#define betaDef		0.1f		// 2 * proportional gain (orig 0.1)
+#define betaDef		0.5f		// 2 * proportional gain (orig 0.1)
 
 #define atan2_offset M_PI
 #define asin_offset M_PI / 2

@@ -50,11 +50,11 @@ void calculate_orientation(float delta_time) {
 void remap_angles_to_gimbals() {
 	remapped_angle_x = (angle_x + atan2_offset) / (2 * M_PI);
 	remapped_angle_y = (angle_y + asin_offset) / (M_PI);
-	gimbal_roll = lerp(0, 1, remapped_angle_x);
+	gimbal_roll = map(clamp(lerp(0, 1, remapped_angle_x), 0.25, 0.75), 0.25, 0.75, 0, 1);
 	if (fabs(gimbal_roll - 0.5) <= GIMBAL_IDLE_THRESH) {
 		gimbal_roll = 0.5;
 	}
-	gimbal_pitch = 1 - lerp(0, 1, remapped_angle_y);
+	gimbal_pitch = 1 - map(clamp(lerp(0, 1, remapped_angle_y), 0.25, 0.75), 0.25, 0.75, 0, 1);
 	if (fabs(gimbal_pitch - 0.5) <= GIMBAL_IDLE_THRESH) {
 		gimbal_pitch = 0.5;
 	}
